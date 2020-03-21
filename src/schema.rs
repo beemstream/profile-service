@@ -2,7 +2,9 @@ table! {
     users (id) {
         id -> Int4,
         username -> Text,
-        hashed_password -> Text,
+        email -> Text,
+        password -> Text,
+        is_deleted -> Bool,
         created_at -> Timestamp,
         updated_at -> Timestamp,
     }
