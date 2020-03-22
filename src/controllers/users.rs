@@ -1,12 +1,12 @@
 use crate::models::user::NewUser;
 use crate::repository::user::insert;
-use bcrypt::{DEFAULT_COST, hash};
 use rocket::http::{Status, ContentType};
 use rocket::request::Request;
 use rocket::response::{self, Responder, Response};
 use rocket_contrib::json::{Json, JsonValue};
 use rocket_contrib::json;
 use diesel::result::Error::DatabaseError;
+use serde::{Serialize};
 
 #[derive(Debug)]
 pub struct ApiResponse {
@@ -35,17 +35,38 @@ impl<'r> Responder<'r> for ApiResponse {
 #[post("/register", format="application/json", data="<user>")]
 pub fn register_user(user: Json<NewUser>) -> ApiResponse {
     let mut user: NewUser = user.into_inner();
-    user.password = hash(user.password, DEFAULT_COST).unwrap();
+    user.hash_password();
 
-    match insert(user) {
-        Ok(_v) => ApiResponse::new(json!({ "status": "ok" }), Status::Ok),
-        Err(e) => {
-            match e {
-                DatabaseError(_v, e) => ApiResponse::new(json!({ "status": "not ok", "reason": String::from(e.message()) }), Status::Forbidden),
-                _ => ApiResponse::new(json!({ "status": "error", "reason": "server error" }), Status::InternalServerError)
+    let validation_errors = user.parsed_field_errors();
+
+    if validation_errors.len() > 0 {
+        println!("there are validation errors");
+        ApiResponse::new(
+            json!({ "status": "not ok", "reason": "FIELD_ERRORS", "fields": validation_errors }),
+            Status::BadRequest
+        )
+    } else {
+        match insert(user) {
+            Ok(_v) => ApiResponse::new(json!({ "status": "OK" }), Status::Ok),
+            Err(e) => {
+                match e {
+                    DatabaseError(_v, e) => {
+                        ApiResponse::new(
+                            json!({ "status": "NOT OK", "reason": String::from(e.message()) }),
+                            Status::BadRequest
+                        )
+                    }
+                    _ => {
+                        ApiResponse::new(
+                            json!({ "status": "error", "reason": "SERVER_ERROR" }),
+                            Status::InternalServerError
+                        )
+                    }
+                }
             }
         }
     }
+
 }
 
 // #[post("/authenticate", format="json", data="<user>")]

@@ -2,6 +2,8 @@
 #[macro_use] extern crate diesel;
 #[macro_use] extern crate lazy_static;
 #[macro_use] extern crate rocket;
+#[macro_use] extern crate validator_derive;
+extern crate validator;
 extern crate rocket_contrib;
 extern crate dotenv;
 extern crate r2d2;
@@ -18,7 +20,6 @@ mod controllers;
 use dotenv::dotenv;
 
 fn main() {
-
     dotenv().ok();
     rocket::ignite().mount("/", routes![controllers::users::register_user]).launch();
 }

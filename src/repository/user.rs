@@ -25,9 +25,7 @@ impl<'a> diesel::result::DatabaseErrorInformation for RegisterError<'a> {
         self.error_description
     }
 
-    fn hint(&self) -> Option<&str> {
-        Some("Try a different value.")
-    }
+    fn hint(&self) -> Option<&str> { Some("Try a different value.") }
 
     fn details(&self) -> Option<&str> { None }
 
@@ -55,6 +53,7 @@ fn get_by_email(email: String) -> QueryResult<User> {
 }
 
 pub fn insert(user: NewUser) -> Result<User, diesel::result::Error> {
+    let conn = &*get_pooled_connection();
     let found_username = get_by_username(user.username.clone());
     let found_email = get_by_email(user.email.clone());
 
@@ -66,7 +65,6 @@ pub fn insert(user: NewUser) -> Result<User, diesel::result::Error> {
     } else if is_found_by_email {
         Err(DatabaseError(UniqueViolation, RegisterError::new("email", "Email already exists.")))
     } else {
-        let conn = &*get_pooled_connection();
         let new_user = diesel::insert_into(users::table)
             .values(&user)
             .get_result::<User>(conn).unwrap();
