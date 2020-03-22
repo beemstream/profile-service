@@ -1,9 +1,9 @@
 use serde::{Serialize, Deserialize};
 use crate::schema::users;
 use bcrypt::{DEFAULT_COST, hash};
-use validator::{Validate, ValidationErrors, ValidationError};
+use validator::Validate;
 use rocket_contrib::json;
-use rocket_contrib::json::{Json, JsonValue};
+use rocket_contrib::json::JsonValue;
 
 #[derive(Queryable, AsChangeset, Serialize, Deserialize)]
 #[table_name="users"]
@@ -40,7 +40,7 @@ impl NewUser {
             Err(e) => {
                 let errors = e.field_errors();
 
-                let mut top_v = vec![];
+                let mut parsed_errors = vec![];
 
                 for key in errors.keys() {
                     let errors = errors.get(key).unwrap();
@@ -49,10 +49,10 @@ impl NewUser {
                     for i in 0..errors.len() {
                         v.push(&errors[i].message);
                     }
-                    top_v.push(json!({ "name": key, "message": v }));
+                    parsed_errors.push(json!({ "name": key, "message": v }));
                 }
 
-                top_v
+                parsed_errors
             }
         }
     }

@@ -6,7 +6,6 @@ use rocket::response::{self, Responder, Response};
 use rocket_contrib::json::{Json, JsonValue};
 use rocket_contrib::json;
 use diesel::result::Error::DatabaseError;
-use serde::{Serialize};
 
 #[derive(Debug)]
 pub struct ApiResponse {
