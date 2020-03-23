@@ -21,5 +21,9 @@ use dotenv::dotenv;
 
 fn main() {
     dotenv().ok();
-    rocket::ignite().mount("/", routes![controllers::users::register_user]).launch();
+    let routes = routes![
+        controllers::users::register_user,
+        controllers::users::authenticate_user
+    ];
+    rocket::ignite().mount("/", routes).launch();
 }

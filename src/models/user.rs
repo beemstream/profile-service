@@ -2,8 +2,7 @@ use serde::{Serialize, Deserialize};
 use crate::schema::users;
 use bcrypt::{DEFAULT_COST, hash};
 use validator::Validate;
-use rocket_contrib::json;
-use rocket_contrib::json::JsonValue;
+use crate::models::validator::Validator;
 
 #[derive(Queryable, AsChangeset, Serialize, Deserialize)]
 #[table_name="users"]
@@ -33,27 +32,13 @@ impl NewUser {
         let hashed = hash(&self.password, DEFAULT_COST).unwrap();
         self.password = hashed;
     }
+}
 
-    pub fn parsed_field_errors(&self) -> Vec<JsonValue> {
-        match self.validate() {
-            Ok(_v) => vec![],
-            Err(e) => {
-                let errors = e.field_errors();
 
-                let mut parsed_errors = vec![];
+impl Validator for NewUser { }
 
-                for key in errors.keys() {
-                    let errors = errors.get(key).unwrap();
-
-                    let mut v = vec![];
-                    for i in 0..errors.len() {
-                        v.push(&errors[i].message);
-                    }
-                    parsed_errors.push(json!({ "name": key, "message": v }));
-                }
-
-                parsed_errors
-            }
-        }
-    }
+#[derive(Debug, Deserialize, Serialize)]
+pub struct LoginUser {
+    identifier: String,
+    password: String
 }

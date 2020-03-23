@@ -1,5 +1,6 @@
-use crate::models::user::NewUser;
+use crate::models::user::{NewUser, LoginUser};
 use crate::repository::user::insert;
+use crate::models::validator::Validator;
 use rocket::http::{Status, ContentType};
 use rocket::request::Request;
 use rocket::response::{self, Responder, Response};
@@ -39,9 +40,8 @@ pub fn register_user(user: Json<NewUser>) -> ApiResponse {
     let validation_errors = user.parsed_field_errors();
 
     if validation_errors.len() > 0 {
-        println!("there are validation errors");
         ApiResponse::new(
-            json!({ "status": "not ok", "reason": "FIELD_ERRORS", "fields": validation_errors }),
+            json!({ "status": "NOT OK", "reason": "FIELD_ERRORS", "fields": validation_errors }),
             Status::BadRequest
         )
     } else {
@@ -57,7 +57,7 @@ pub fn register_user(user: Json<NewUser>) -> ApiResponse {
                     }
                     _ => {
                         ApiResponse::new(
-                            json!({ "status": "error", "reason": "SERVER_ERROR" }),
+                            json!({ "status": "ERROR", "reason": "SERVER_ERROR" }),
                             Status::InternalServerError
                         )
                     }
@@ -68,13 +68,11 @@ pub fn register_user(user: Json<NewUser>) -> ApiResponse {
 
 }
 
-// #[post("/authenticate", format="json", data="<user>")]
-// pub fn authenticate(user: Json<User>) -> Json<User> {
-//     let user: User = user.into_inner();
+#[post("/login", format="json", data="<user>")]
+pub fn authenticate_user(user: Json<LoginUser>) -> JsonValue {
+    let user: LoginUser = user.into_inner();
 
-//     Json(get(2).unwrap())
-//     match verify(user.password) {
-//         Ok => Json(insert(user)),
-//         _ => Json()
-//     }
-// }
+    println!("{:?}", user);
+
+    json!({ "status": "OK" })
+}
