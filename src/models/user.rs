@@ -1,6 +1,6 @@
 use serde::{Serialize, Deserialize};
 use crate::schema::users;
-use bcrypt::{DEFAULT_COST, hash};
+use bcrypt::{DEFAULT_COST, hash, verify};
 use validator::Validate;
 use crate::models::validator::Validator;
 
@@ -14,6 +14,12 @@ pub struct User {
     pub is_deleted: bool,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
+}
+
+impl User {
+    pub fn verify(&self, non_hashed: &String) -> bool {
+        verify(&non_hashed, &self.password).unwrap()
+    }
 }
 
 #[derive(Insertable, Validate, Deserialize, Serialize)]
@@ -39,6 +45,7 @@ impl Validator for NewUser { }
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct LoginUser {
-    identifier: String,
-    password: String
+    pub identifier: String,
+    pub password: String
 }
+

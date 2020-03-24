@@ -1,4 +1,4 @@
-use crate::models::user::{NewUser, User};
+use crate::models::user::{NewUser, LoginUser, User};
 use crate::database::get_pooled_connection;
 use diesel::result::Error::DatabaseError;
 use diesel::result::DatabaseErrorKind::UniqueViolation;
@@ -70,6 +70,15 @@ pub fn insert(user: NewUser) -> Result<User, diesel::result::Error> {
             .get_result::<User>(conn).unwrap();
         Ok(new_user)
     }
+}
+
+pub fn find(user: LoginUser) -> Result<User, diesel::result::Error> {
+    let conn = &*get_pooled_connection();
+
+    users::table
+        .filter(users::email.eq(&user.identifier))
+        .or_filter(users::username.eq(&user.identifier))
+        .get_result::<User>(conn)
 }
 
 pub fn update(id: i32, user: User) -> QueryResult<User> {

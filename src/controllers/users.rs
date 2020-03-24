@@ -1,5 +1,5 @@
 use crate::models::user::{NewUser, LoginUser};
-use crate::repository::user::insert;
+use crate::repository::user::{insert, find};
 use crate::models::validator::Validator;
 use rocket::http::{Status, ContentType};
 use rocket::request::Request;
@@ -69,10 +69,18 @@ pub fn register_user(user: Json<NewUser>) -> ApiResponse {
 }
 
 #[post("/login", format="json", data="<user>")]
-pub fn authenticate_user(user: Json<LoginUser>) -> JsonValue {
+pub fn authenticate_user(user: Json<LoginUser>) -> ApiResponse {
     let user: LoginUser = user.into_inner();
 
-    println!("{:?}", user);
+    let password = &user.password.clone();
+    let is_verified = match find(user) {
+        Ok(v) => v.verify(password),
+        _ => false
+    };
 
-    json!({ "status": "OK" })
+    if is_verified {
+        ApiResponse::new(json!({ "status": "OK" }), Status::Ok)
+    } else {
+        ApiResponse::new(json!({ "status": "NOT OK" }), Status::Unauthorized)
+    }
 }
