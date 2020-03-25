@@ -7,18 +7,16 @@ POST /login
 Request login 
 ```
 {
-  username: string,
+  identifier: string,
   password: string,
 }
 ```
 Response login
 ```
 {
-  oauth-token: {
-    token: string,
-    refresh_token: string,
-    refresh_interval: string,
-  }
+  token: string,
+  refresh_token: string,
+  refresh_interval: string,
 }
 ```
 #### Registration
@@ -29,8 +27,8 @@ Request register
 ```
 {
   username: string,
-  password: string,
   email: string
+  password: string,
 }
 ```
 Response register
