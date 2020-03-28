@@ -46,7 +46,7 @@ pub fn register_user(user: Json<NewUser>) -> ApiResponse {
             Status::BadRequest
         )
     } else {
-        match insert(user) {
+        match insert(&user) {
             Ok(_v) => ApiResponse::new(json!({ "status": "OK" }), Status::Ok),
             Err(e) => {
                 match e {
@@ -73,9 +73,8 @@ pub fn register_user(user: Json<NewUser>) -> ApiResponse {
 pub fn login_user(user: Json<LoginUser>, mut cookies: Cookies) -> ApiResponse {
     let user: LoginUser = user.into_inner();
 
-    let password = &user.password.clone();
-    let is_verified = match find(user) {
-        Ok(v) => v.verify(password),
+    let is_verified = match find(&user) {
+        Ok(v) => v.verify(&user.password),
         _ => false
     };
 
