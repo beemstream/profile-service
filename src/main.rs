@@ -22,16 +22,21 @@ use dotenv::dotenv;
 use rocket_cors::{AllowedOrigins, Error};
 use rocket::http::Method::{Get, Post};
 
-fn main() -> Result<(), Error> {
-    dotenv().ok();
-    let allowed_origins = AllowedOrigins::some_exact(&["http://localhost:4200"]);
-    let cors = rocket_cors::CorsOptions {
+fn setup_up_cors() -> Result<rocket_cors::Cors, Error> {
+    let allowed_origins_env = std::env::var("ALLOWED_ORIGINS").expect("No origins set");
+    let origins: Vec<&str> = allowed_origins_env.split(",").collect();
+    let allowed_origins = AllowedOrigins::some_exact(origins.as_slice());
+
+    rocket_cors::CorsOptions {
         allowed_origins,
         allowed_methods: vec![Get, Post].into_iter().map(From::from).collect(),
         allow_credentials: true,
         ..Default::default()
-    }
-    .to_cors()?;
+    }.to_cors()
+}
+
+fn main() -> Result<(), Error> {
+    dotenv().ok();
     let routes = routes![
         controllers::users::register_user,
         controllers::users::login_user,
@@ -39,7 +44,7 @@ fn main() -> Result<(), Error> {
     ];
     rocket::ignite()
         .mount("/", routes)
-        .attach(cors)
+        .attach(setup_up_cors()?)
         .launch();
     Ok(())
 }

@@ -89,7 +89,7 @@ pub fn login_user(user: Json<LoginUser>, mut cookies: Cookies) -> ApiResponse {
 
         ApiResponse::new(json!({ "status": "OK" }), Status::Ok)
     } else {
-        ApiResponse::new(json!({ "status": "NOT OK" }), Status::Unauthorized)
+        ApiResponse::new(json!({ "status": "NOT OK", "reason": "Username/email or password is incorrect." }), Status::Unauthorized)
     }
 }
 
