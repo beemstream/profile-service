@@ -94,7 +94,7 @@ pub fn login_user(user: Json<LoginUser>, mut cookies: Cookies) -> ApiResponse {
 }
 
 #[get("/authenticate")]
-pub fn authenticate(mut cookie: Cookies) -> JsonValue {
+pub fn authenticate(mut cookie: Cookies) -> ApiResponse {
     let key = std::env::var("ROCKET_secret_key").expect("secret_key must be set");
     let validation = Validation { iss: Some("beemstream".to_string()), sub: Some("normal_user@beemstream.com".to_string()), leeway: 2, ..Validation::default() };
     let token = cookie.get_private("token");
@@ -104,10 +104,10 @@ pub fn authenticate(mut cookie: Cookies) -> JsonValue {
             let token_str = &t.to_string();
             let parsed_token = token_str.split("=").nth(1).unwrap();
             match decode::<Claims>(parsed_token, key.as_ref(), &validation) {
-                Ok(_c) => json!({ "status": "OK" }),
-                Err(_err) => json!({ "status": "NOT OK" }),
+                Ok(_c) => ApiResponse::new(json!({ "status": "OK" }), Status::Ok),
+                Err(_err) => ApiResponse::new(json!({ "status": "NOT OK" }), Status::Forbidden),
             }
         },
-        None => json!({ "status": "NOT OK" })
+        None => ApiResponse::new(json!({ "status": "NOT OK" }), Status::Forbidden)
     }
 }
