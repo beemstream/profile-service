@@ -37,25 +37,18 @@ impl<'a> diesel::result::DatabaseErrorInformation for RegisterError<'a> {
 
 }
 
-pub fn get(id: i32) -> QueryResult<User> {
-    let conn = &*get_pooled_connection();
-    users::table.find(id).get_result::<User>(conn)
-}
-
-fn get_by_username(username: String) -> QueryResult<User> {
-    let conn = &*get_pooled_connection();
+fn get_by_username(username: String, conn: &PgConnection) -> QueryResult<User> {
     users::table.filter(users::username.eq(&username)).get_result::<User>(conn)
 }
 
-fn get_by_email(email: String) -> QueryResult<User> {
-    let conn = &*get_pooled_connection();
+fn get_by_email(email: String, conn: &PgConnection) -> QueryResult<User> {
     users::table.filter(users::email.eq(&email)).get_result::<User>(conn)
 }
 
 pub fn insert(user: NewUser) -> Result<User, diesel::result::Error> {
     let conn = &*get_pooled_connection();
-    let found_username = get_by_username(user.username.clone());
-    let found_email = get_by_email(user.email.clone());
+    let found_username = get_by_username(user.username.clone(), conn);
+    let found_email = get_by_email(user.email.clone(), conn);
 
     let is_found_by_username = has_found_user(found_username);
     let is_found_by_email = has_found_user(found_email);

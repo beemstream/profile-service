@@ -15,8 +15,8 @@ Response login
 ```
 {
   token: string,
-  refresh_token: string,
-  refresh_interval: string,
+  refreshToken: string,
+  refreshInterval: string,
 }
 ```
 #### Registration
@@ -52,6 +52,6 @@ Response refresh
 ```
 {
   token: string,
-  refresh_token: string
+  refreshInterval: string
 }
 `

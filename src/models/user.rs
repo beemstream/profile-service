@@ -49,3 +49,27 @@ pub struct LoginUser {
     pub password: String
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Claims {
+    sub: String,
+    iss: String,
+    exp: usize,
+    iat: usize,
+    nbf: usize,
+}
+
+impl Claims {
+    pub fn new() -> Claims {
+        let time_now = chrono::Utc::now();
+        let exp = time_now + chrono::Duration::minutes(30);
+        let nbf = time_now + chrono::Duration::minutes(1);
+
+        Claims {
+            sub: String::from("normal_user@beemstream.com"),
+            iss: String::from("beemstream"),
+            exp: exp.timestamp() as usize,
+            iat: time_now.timestamp() as usize,
+            nbf: nbf.timestamp() as usize,
+        }
+    }
+}
