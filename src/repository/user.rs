@@ -37,15 +37,15 @@ impl<'a> diesel::result::DatabaseErrorInformation for RegisterError<'a> {
 
 }
 
-fn get_by_username(username: &String, conn: &PgConnection) -> QueryResult<User> {
-    users::table.filter(users::username.eq(&username)).get_result::<User>(conn)
+fn get_by_username(username: &String, conn: &PgConnection) -> QueryResult<i32> {
+    users::table.select(users::id).filter(users::username.eq(&username)).get_result::<i32>(conn)
 }
 
-fn get_by_email(email: &String, conn: &PgConnection) -> QueryResult<User> {
-    users::table.filter(users::email.eq(&email)).get_result::<User>(conn)
+fn get_by_email(email: &String, conn: &PgConnection) -> QueryResult<i32> {
+    users::table.select(users::id).filter(users::email.eq(&email)).get_result::<i32>(conn)
 }
 
-pub fn insert(user: &NewUser) -> Result<User, diesel::result::Error> {
+pub fn insert(user: &NewUser) -> Result<usize, diesel::result::Error> {
     let conn = &*get_pooled_connection();
     let found_username = get_by_username(&user.username, conn);
     let found_email = get_by_email(&user.email, conn);
@@ -58,10 +58,9 @@ pub fn insert(user: &NewUser) -> Result<User, diesel::result::Error> {
     } else if is_found_by_email {
         Err(DatabaseError(UniqueViolation, RegisterError::new("email", "Email already exists.")))
     } else {
-        let new_user = diesel::insert_into(users::table)
+        diesel::insert_into(users::table)
             .values(user)
-            .get_result::<User>(conn).unwrap();
-        Ok(new_user)
+            .execute(conn)
     }
 }
 
@@ -89,7 +88,7 @@ pub fn delete(id: i32, mut user: User) -> QueryResult<User> {
         .get_result(conn)
 }
 
-pub fn has_found_user(user: QueryResult<User>) -> bool {
+pub fn has_found_user(user: QueryResult<i32>) -> bool {
     match user {
         Ok(_v) => true,
         Err(_e) => false

@@ -35,17 +35,16 @@ impl<'r> Responder<'r> for ApiResponse {
 
 #[post("/register", format="application/json", data="<user>")]
 pub fn register_user(user: Json<NewUser>) -> ApiResponse {
-    let mut user: NewUser = user.into_inner();
-    user.hash_password();
 
     let validation_errors = user.parsed_field_errors();
-
     if validation_errors.len() > 0 {
         ApiResponse::new(
             json!({ "status": "NOT OK", "reason": "FIELD_ERRORS", "fields": validation_errors }),
             Status::BadRequest
         )
     } else {
+        let mut user: NewUser = user.into_inner();
+        user.hash_password();
         match insert(&user) {
             Ok(_v) => ApiResponse::new(json!({ "status": "OK" }), Status::Ok),
             Err(e) => {
@@ -54,13 +53,13 @@ pub fn register_user(user: Json<NewUser>) -> ApiResponse {
                         ApiResponse::new(
                             json!({ "status": "NOT OK", "reason": String::from(e.message()) }),
                             Status::BadRequest
-                        )
+                            )
                     }
                     _ => {
                         ApiResponse::new(
                             json!({ "status": "ERROR", "reason": "SERVER_ERROR" }),
                             Status::InternalServerError
-                        )
+                            )
                     }
                 }
             }
