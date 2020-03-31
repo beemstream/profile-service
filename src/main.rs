@@ -3,6 +3,8 @@
 #[macro_use] extern crate lazy_static;
 #[macro_use] extern crate rocket;
 #[macro_use] extern crate validator_derive;
+extern crate serde;
+extern crate serde_json;
 extern crate validator;
 extern crate rocket_contrib;
 extern crate dotenv;
@@ -11,12 +13,17 @@ extern crate r2d2_diesel;
 extern crate chrono;
 extern crate bcrypt;
 extern crate time;
+extern crate base64;
+extern crate oauth2;
+extern crate rand;
+extern crate url;
 
 mod models;
 mod database;
 mod repository;
 mod schema;
 mod controllers;
+mod oauth;
 
 use dotenv::dotenv;
 use rocket_cors::{AllowedOrigins, Error};
@@ -40,7 +47,9 @@ fn main() -> Result<(), Error> {
     let routes = routes![
         controllers::users::register_user,
         controllers::users::login_user,
-        controllers::users::authenticate
+        controllers::users::authenticate,
+        controllers::oauth::twitch_auth,
+        controllers::oauth::twitch_token
     ];
     rocket::ignite()
         .mount("/", routes)
