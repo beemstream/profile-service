@@ -4,7 +4,9 @@ use serde::{Serialize, Deserialize};
 use rocket::response::Redirect;
 use rocket_contrib::json::Json;
 use rocket_contrib::json;
-use rocket::http::Status;
+use rocket::http::{Status, Cookie, Cookies};
+use oauth2::TokenResponse;
+use oauth2::prelude::SecretNewType;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TwitchGrant<'a> {
@@ -18,10 +20,16 @@ pub fn twitch_auth() -> Redirect {
 }
 
 #[post("/auth/twitch", format="application/json", data="<twitch_grant>")]
-pub fn twitch_token(twitch_grant: Json<TwitchGrant>) -> ApiResponse {
+pub fn twitch_token(twitch_grant: Json<TwitchGrant>, mut cookies: Cookies) -> ApiResponse {
 
     match twitch_exchange_code(String::from(twitch_grant.code)) {
-        Ok(_v) => {
+        Ok(v) => {
+            let access_token = v.access_token();
+            let refresh_token = v.refresh_token();
+            let expires_in = v.expires_in();
+            cookies.add_private(Cookie::new("access_token", access_token.secret().to_owned()));
+            cookies.add_private(Cookie::new("refresh_token", refresh_token.unwrap().secret().to_owned()));
+            cookies.add(Cookie::new("expires_in", expires_in.unwrap().as_millis().to_string()));
             ApiResponse::new(json!({ "status": "OK" }), Status::Ok)
         },
         Err(_e) => {

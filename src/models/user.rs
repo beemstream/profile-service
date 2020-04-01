@@ -59,17 +59,21 @@ pub struct Claims {
 }
 
 impl Claims {
-    pub fn new() -> Claims {
+    pub fn new(identifier: &str) -> Claims {
         let time_now = chrono::Utc::now();
         let exp = time_now + chrono::Duration::minutes(30);
         let nbf = time_now + chrono::Duration::minutes(1);
 
         Claims {
-            sub: String::from("normal_user@beemstream.com"),
+            sub: String::from(identifier),
             iss: String::from("beemstream"),
             exp: exp.timestamp() as usize,
             iat: time_now.timestamp() as usize,
             nbf: nbf.timestamp() as usize,
         }
+    }
+
+    pub fn sub(&self) -> &str {
+        &self.sub
     }
 }

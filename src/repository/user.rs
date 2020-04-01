@@ -37,11 +37,11 @@ impl<'a> diesel::result::DatabaseErrorInformation for RegisterError<'a> {
 
 }
 
-fn get_by_username(username: &String, conn: &PgConnection) -> QueryResult<i32> {
+pub fn get_by_username(username: &String, conn: &PgConnection) -> QueryResult<i32> {
     users::table.select(users::id).filter(users::username.eq(&username)).get_result::<i32>(conn)
 }
 
-fn get_by_email(email: &String, conn: &PgConnection) -> QueryResult<i32> {
+pub fn get_by_email(email: &String, conn: &PgConnection) -> QueryResult<i32> {
     users::table.select(users::id).filter(users::email.eq(&email)).get_result::<i32>(conn)
 }
 

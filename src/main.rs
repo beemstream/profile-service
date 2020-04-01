@@ -24,6 +24,7 @@ mod repository;
 mod schema;
 mod controllers;
 mod oauth;
+mod jwt;
 
 use dotenv::dotenv;
 use rocket_cors::{AllowedOrigins, Error};
