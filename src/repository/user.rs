@@ -64,12 +64,12 @@ pub fn insert(user: &NewUser) -> Result<usize, diesel::result::Error> {
     }
 }
 
-pub fn find(user: &LoginUser) -> Result<User, diesel::result::Error> {
+pub fn find(identifier: &String) -> Result<User, diesel::result::Error> {
     let conn = &*get_pooled_connection();
 
     users::table
-        .filter(users::email.eq(&user.identifier))
-        .or_filter(users::username.eq(&user.identifier))
+        .filter(users::email.eq(identifier))
+        .or_filter(users::username.eq(identifier))
         .get_result::<User>(conn)
 }
 

@@ -4,10 +4,9 @@ use rocket_contrib::json;
 use diesel::result::Error::DatabaseError;
 use jsonwebtoken::{decode, encode};
 use crate::models::user::{NewUser, LoginUser, Claims};
-use crate::repository::user::{insert, find, get_by_username, get_by_email, has_found_user};
+use crate::repository::user::{insert, find};
 use crate::models::validator::Validator;
 use crate::controllers::response::ApiResponse;
-use crate::database::get_pooled_connection;
 use crate::jwt::{validation, header};
 
 #[post("/register", format="application/json", data="<user>")]
@@ -49,7 +48,7 @@ pub fn register_user(user: Json<NewUser>) -> ApiResponse {
 pub fn login_user(user: Json<LoginUser>, mut cookies: Cookies) -> ApiResponse {
     let user: LoginUser = user.into_inner();
 
-    let is_verified = match find(&user) {
+    let is_verified = match find(&user.identifier) {
         Ok(v) => v.verify(&user.password),
         _ => false
     };
@@ -82,15 +81,12 @@ pub fn authenticate(mut cookie: Cookies) -> ApiResponse {
             let parsed_token = token_str.split("=").nth(1).unwrap();
             match decode::<Claims>(parsed_token, key.as_ref(), &validation) {
                 Ok(c) => {
-                    let conn = &*get_pooled_connection();
                     let sub = &c.claims.sub().to_string();
-                    let email = get_by_email(sub, conn);
-                    let username = get_by_username(sub, conn);
+                    let identifier = find(sub);
 
-                    if has_found_user(email) || has_found_user(username) {
-                        ApiResponse::new(json!({ "status": "OK" }), Status::Ok)
-                    } else {
-                        ApiResponse::new(json!({ "status": "NOT OK" }), Status::Forbidden)
+                    match identifier {
+                        Ok(_v) => ApiResponse::new(json!({ "status": "OK" }), Status::Ok),
+                        Err(_e) => ApiResponse::new(json!({ "status": "NOT OK" }), Status::Forbidden)
                     }
                 }
                 Err(_err) => ApiResponse::new(json!({ "status": "NOT OK" }), Status::Forbidden),
