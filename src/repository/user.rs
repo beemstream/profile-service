@@ -21,9 +21,7 @@ impl<'a> RegisterError<'a> {
 
 impl<'a> diesel::result::DatabaseErrorInformation for RegisterError<'a> {
 
-    fn message(&self) -> &str {
-        self.error_description
-    }
+    fn message(&self) -> &str { self.error_description }
 
     fn hint(&self) -> Option<&str> { Some("Try a different value.") }
 

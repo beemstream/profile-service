@@ -1,5 +1,4 @@
-use crate::oauth::{twitch_authenticate, twitch_exchange_code};
-use crate::controllers::response::ApiResponse;
+use crate::{util::response::ApiResponse, oauth::{twitch_authenticate, twitch_exchange_code}};
 use serde::{Serialize, Deserialize};
 use rocket::response::Redirect;
 use rocket_contrib::json::Json;
@@ -32,8 +31,14 @@ pub fn twitch_token(twitch_grant: Json<TwitchGrant>, mut cookies: Cookies) -> Ap
             cookies.add(Cookie::new("expires_in", expires_in.unwrap().as_millis().to_string()));
             ApiResponse::new(json!({ "status": "OK" }), Status::Ok)
         },
-        Err(_e) => {
-            ApiResponse::new(json!({ "status": "NOT OK" }), Status::InternalServerError)
+        Err(e) => {
+            match e {
+                oauth2::RequestTokenError::ServerResponse(response) => {
+                    ApiResponse::new(json!({ "status": "NOT OK", "message": response.error_description().unwrap() }), Status::InternalServerError)
+                }
+                _ => ApiResponse::new(json!({ "status": "NOT OK" }), Status::InternalServerError)
+            }
+            
         }
     }
 }

@@ -1,13 +1,11 @@
 use rocket::http::{Status, Cookies, Cookie};
-use rocket_contrib::json::Json;
 use rocket_contrib::json;
 use diesel::result::Error::DatabaseError;
 use jsonwebtoken::{decode, encode};
 use crate::models::user::{NewUser, LoginUser, Claims};
 use crate::repository::user::{insert, find};
-use crate::models::validator::Validator;
-use crate::controllers::response::ApiResponse;
-use crate::jwt::{validation, header};
+use crate::{util::{validator::Validator, response::ApiResponse}, jwt::{validation, header}};
+use json::Json;
 
 lazy_static!{
     static ref COOKIE_TOKEN_NAME: String = "access_token".to_string();

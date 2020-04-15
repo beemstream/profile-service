@@ -1,8 +1,7 @@
 use serde::{Serialize, Deserialize};
-use crate::schema::users;
+use crate::{util::validator::Validator, schema::users};
 use bcrypt::{DEFAULT_COST, hash, verify};
 use validator::Validate;
-use crate::models::validator::Validator;
 
 #[derive(Queryable, AsChangeset, Serialize, Deserialize)]
 #[table_name="users"]
