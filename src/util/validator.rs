@@ -1,10 +1,9 @@
 use validator::Validate;
-use rocket_contrib::json;
-use rocket_contrib::json::JsonValue;
+use super::response::FieldError;
 
 pub trait Validator<T: Validate = Self>: Validate {
 
-    fn parsed_field_errors(&self) -> Option<Vec<JsonValue>> {
+    fn parsed_field_errors(&self) -> Option<Vec<FieldError>> {
         match self.validate() {
             Ok(_v) => None,
             Err(e) => {
@@ -17,9 +16,10 @@ pub trait Validator<T: Validate = Self>: Validate {
 
                     let mut v = vec![];
                     for i in 0..errors.len() {
-                        v.push(&errors[i].message);
+                        let message = errors[i].message.clone().unwrap();
+                        v.push(message.into_owned());
                     }
-                    parsed_errors.push(json!({ "name": key, "message": v }));
+                    parsed_errors.push(FieldError::new(String::from(*key), v));
                 }
 
                 if parsed_errors.len() > 0 {
@@ -32,5 +32,4 @@ pub trait Validator<T: Validate = Self>: Validate {
         }
     }
 }
-
 

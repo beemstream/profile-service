@@ -20,19 +20,12 @@ impl<'a> RegisterError<'a> {
 }
 
 impl<'a> diesel::result::DatabaseErrorInformation for RegisterError<'a> {
-
     fn message(&self) -> &str { self.error_description }
-
     fn hint(&self) -> Option<&str> { Some("Try a different value.") }
-
     fn details(&self) -> Option<&str> { None }
-
     fn column_name(&self) -> Option<&str> { Some(&self.column_name) }
-
     fn constraint_name(&self) -> Option<&str> { None }
-
     fn table_name(&self) -> Option<&str> { Some("users") }
-
 }
 
 pub fn get_by_username(username: &String, conn: &PgConnection) -> QueryResult<i32> {

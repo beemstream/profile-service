@@ -4,7 +4,7 @@ use diesel::result::Error::DatabaseError;
 use jsonwebtoken::{decode, encode};
 use crate::models::user::{NewUser, LoginUser, Claims};
 use crate::repository::user::{insert, find};
-use crate::{util::{validator::Validator, response::ApiResponse}, jwt::{validation, header}};
+use crate::{util::{validator::Validator, response::{JsonResponse, ApiResponse, AuthResponse, JsonStatus, StatusReason}}, jwt::{validation, header}};
 use json::Json;
 
 lazy_static!{
@@ -13,35 +13,33 @@ lazy_static!{
 }
 
 #[post("/register", format="application/json", data="<user>")]
-pub fn register_user(user: Json<NewUser>) -> ApiResponse {
+pub fn register_user(user: Json<NewUser>) -> JsonResponse {
 
     let validation_errors = user.parsed_field_errors();
 
     match validation_errors {
         Some(errors) => {
-            ApiResponse::new(
-                json!({ "status": "NOT OK", "reason": "FIELD_ERRORS", "fields": errors }),
-                Status::BadRequest
-                )
+            JsonResponse::new(
+                AuthResponse::new(JsonStatus::NotOk, Some(StatusReason::FieldErrors), errors),
+                Status::BadRequest)
         },
         None => {
             let mut user: NewUser = user.into_inner();
             user.hash_password();
             match insert(&user) {
-                Ok(_v) => ApiResponse::new(json!({ "status": "OK" }), Status::Ok),
+                Ok(_v) => JsonResponse::new(AuthResponse::new(JsonStatus::Ok, None, vec![]), Status::Ok),
                 Err(e) => {
                     match e {
                         DatabaseError(_v, e) => {
-                            ApiResponse::new(
-                                json!({ "status": "NOT OK", "reason": String::from(e.message()) }),
-                                Status::BadRequest
-                                )
+                            JsonResponse::new(
+                                AuthResponse::new(
+                                    JsonStatus::NotOk, Some(StatusReason::Other(String::from(e.message()))), vec![]),
+                                Status::BadRequest)
                         }
                         _ => {
-                            ApiResponse::new(
-                                json!({ "status": "ERROR", "reason": "SERVER_ERROR" }),
-                                Status::InternalServerError
-                                )
+                            JsonResponse::new(
+                                AuthResponse::new(JsonStatus::Error, Some(StatusReason::ServerError), vec![]),
+                                Status::InternalServerError)
                         }
                     }
                 }

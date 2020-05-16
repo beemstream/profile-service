@@ -29,7 +29,8 @@ mod util;
 
 use dotenv::dotenv;
 use rocket_cors::{AllowedOrigins, Error};
-use rocket::http::Method::{Get, Post};
+use rocket::{fairing::{Info, Fairing, Kind}, http::Method::{Get, Post}};
+use std::time::{Duration, Instant, SystemTime};
 
 fn setup_up_cors() -> Result<rocket_cors::Cors, Error> {
     let allowed_origins_env = std::env::var("ALLOWED_ORIGINS").expect("No origins set");
@@ -44,6 +45,34 @@ fn setup_up_cors() -> Result<rocket_cors::Cors, Error> {
     }.to_cors()
 }
 
+struct MiddleWare;
+
+impl Fairing for MiddleWare {
+    fn on_attach(&self, rocket: rocket::Rocket) -> Result<rocket::Rocket, rocket::Rocket> { Ok(rocket) }
+    fn on_launch(&self, _rocket: &rocket::Rocket) {}
+    fn on_request(&self, request: &mut rocket::Request, _data: &rocket::Data) {
+        request.local_cache(|| TimerStart(Some(SystemTime::now())));
+    }
+    fn on_response(&self, request: &rocket::Request, _response: &mut rocket::Response) {
+        let start_time = request.local_cache(|| TimerStart(None));
+        if let Some(Ok(duration)) = start_time.0.map(|st| st.elapsed()) {
+            let ms = duration.as_secs() * 1000 + duration.subsec_millis() as u64;
+            println!("{:?}:{:?}:{:?}ms", request.method(), request.uri().path(), ms);
+        }
+    }
+    fn info(&self) -> rocket::fairing::Info {
+        Info {
+            kind: Kind::Request | Kind::Response,
+            name: "Performance"
+        }
+    }
+
+}
+
+#[derive(Copy, Clone)]
+struct TimerStart(Option<SystemTime>);
+
+
 fn main() -> Result<(), Error> {
     dotenv().ok();
     let routes = routes![
@@ -56,6 +85,7 @@ fn main() -> Result<(), Error> {
     rocket::ignite()
         .mount("/", routes)
         .attach(setup_up_cors()?)
+        .attach(MiddleWare)
         .launch();
     Ok(())
 }

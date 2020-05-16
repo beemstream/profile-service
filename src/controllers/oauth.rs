@@ -3,7 +3,7 @@ use serde::{Serialize, Deserialize};
 use rocket::response::Redirect;
 use rocket_contrib::json::Json;
 use rocket_contrib::json;
-use rocket::http::{Status, Cookie, Cookies};
+use rocket::http::{Cookie, Cookies, Status};
 use oauth2::TokenResponse;
 use oauth2::prelude::SecretNewType;
 
@@ -29,7 +29,7 @@ pub fn twitch_token(twitch_grant: Json<TwitchGrant>, mut cookies: Cookies) -> Ap
             cookies.add_private(Cookie::new("access_token", access_token.secret().to_owned()));
             cookies.add_private(Cookie::new("refresh_token", refresh_token.unwrap().secret().to_owned()));
             cookies.add(Cookie::new("expires_in", expires_in.unwrap().as_millis().to_string()));
-            ApiResponse::new(json!({ "status": "OK" }), Status::Ok)
+            ApiResponse::new(json!({ "status": "OK", "access_token": access_token, "expires_in": expires_in }), Status::Ok)
         },
         Err(e) => {
             match e {
@@ -38,7 +38,6 @@ pub fn twitch_token(twitch_grant: Json<TwitchGrant>, mut cookies: Cookies) -> Ap
                 }
                 _ => ApiResponse::new(json!({ "status": "NOT OK" }), Status::InternalServerError)
             }
-            
         }
     }
 }
