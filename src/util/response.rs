@@ -67,12 +67,12 @@ pub struct AuthResponse {
     status: JsonStatus,
     #[serde(skip_serializing_if = "Option::is_none")]
     reason: Option<StatusReason>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    fields: Vec<FieldError>
+    #[serde(skip_serializing_if = "Option::is_none")]
+    fields: Option<Vec<FieldError>>
 }
 
 impl AuthResponse {
-    pub fn new(status: JsonStatus, reason: Option<StatusReason>, fields: Vec<FieldError>) -> Self {
+    pub fn new(status: JsonStatus, reason: Option<StatusReason>, fields: Option<Vec<FieldError>>) -> Self {
         Self {
             status,
             reason,

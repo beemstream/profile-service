@@ -16,36 +16,28 @@ lazy_static!{
 pub fn register_user(user: Json<NewUser>) -> JsonResponse {
 
     let validation_errors = user.parsed_field_errors();
-
+    let mut auth_response: AuthResponse = AuthResponse::new(JsonStatus::Ok, None, None);
+    let mut status: Status = Status::Ok;
     match validation_errors {
         Some(errors) => {
-            JsonResponse::new(
-                AuthResponse::new(JsonStatus::NotOk, Some(StatusReason::FieldErrors), errors),
-                Status::BadRequest)
+            auth_response = AuthResponse::new(JsonStatus::NotOk, Some(StatusReason::FieldErrors), Some(errors));
+            status = Status::BadRequest;
         },
         None => {
             let mut user: NewUser = user.into_inner();
             user.hash_password();
-            match insert(&user) {
-                Ok(_v) => JsonResponse::new(AuthResponse::new(JsonStatus::Ok, None, vec![]), Status::Ok),
-                Err(e) => {
-                    match e {
-                        DatabaseError(_v, e) => {
-                            JsonResponse::new(
-                                AuthResponse::new(
-                                    JsonStatus::NotOk, Some(StatusReason::Other(String::from(e.message()))), vec![]),
-                                Status::BadRequest)
-                        }
-                        _ => {
-                            JsonResponse::new(
-                                AuthResponse::new(JsonStatus::Error, Some(StatusReason::ServerError), vec![]),
-                                Status::InternalServerError)
-                        }
+            if let Err(e) = insert(&user) {
+                    if let DatabaseError(_v, db_error) = e {
+                        auth_response = AuthResponse::new(JsonStatus::NotOk, Some(StatusReason::Other(String::from(db_error.message()))), None);
+                        status = Status::BadRequest;
+                    } else {
+                        auth_response = AuthResponse::new(JsonStatus::Error, Some(StatusReason::ServerError), None);
+                        status = Status::InternalServerError;
                     }
-                }
             }
         }
     }
+    JsonResponse::new(auth_response, status)
 }
 
 #[post("/login", format="application/json", data="<user>")]
