@@ -55,7 +55,7 @@ pub fn insert(user: &NewUser) -> Result<usize, diesel::result::Error> {
     }
 }
 
-pub fn find(identifier: &String) -> Result<User, diesel::result::Error> {
+pub fn find(identifier: &str) -> Result<User, diesel::result::Error> {
     let conn = &*get_pooled_connection();
 
     users::table

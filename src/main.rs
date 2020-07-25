@@ -28,9 +28,9 @@ mod jwt;
 mod util;
 
 use dotenv::dotenv;
-use rocket_cors::{AllowedOrigins, Error};
 use rocket::{fairing::{Info, Fairing, Kind}, http::Method::{Get, Post}};
-use std::time::{Duration, Instant, SystemTime};
+use rocket_cors::{Error, AllowedOrigins};
+use std::time::SystemTime;
 
 fn setup_up_cors() -> Result<rocket_cors::Cors, Error> {
     let allowed_origins_env = std::env::var("ALLOWED_ORIGINS").expect("No origins set");

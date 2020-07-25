@@ -16,7 +16,7 @@ pub struct User {
 }
 
 impl User {
-    pub fn verify(&self, non_hashed: &String) -> bool {
+    pub fn verify(&self, non_hashed: &str) -> bool {
         verify(&non_hashed, &self.password).unwrap()
     }
 }
@@ -43,29 +43,31 @@ impl NewUser {
 impl Validator for NewUser { }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct LoginUser {
-    pub identifier: String,
-    pub password: String
+pub struct LoginUser<'a> {
+    pub identifier: &'a str,
+    pub password: &'a str
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
     sub: String,
     iss: String,
-    exp: usize,
+    pub exp: usize,
     iat: usize,
     nbf: usize,
 }
 
+const ISSUER: &'static str = "beemstream";
+
 impl Claims {
-    pub fn new(identifier: &str) -> Claims {
+    pub fn new(identifier: &str, refresh_interval: i64) -> Claims {
         let time_now = chrono::Utc::now();
-        let exp = time_now + chrono::Duration::minutes(30);
-        let nbf = time_now + chrono::Duration::minutes(1);
+        let exp = time_now + chrono::Duration::seconds(refresh_interval);
+        let nbf = time_now + chrono::Duration::seconds(2);
 
         Claims {
             sub: String::from(identifier),
-            iss: String::from("beemstream"),
+            iss: String::from(ISSUER),
             exp: exp.timestamp() as usize,
             iat: time_now.timestamp() as usize,
             nbf: nbf.timestamp() as usize,

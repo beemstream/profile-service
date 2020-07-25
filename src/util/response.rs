@@ -2,7 +2,7 @@ use rocket_contrib::json::{Json, JsonValue};
 use rocket::response::{self, Responder, Response};
 use rocket::http::{Status, ContentType};
 use rocket::request::Request;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 
 #[derive(Debug)]
 pub struct ApiResponse {
@@ -81,13 +81,13 @@ impl AuthResponse {
     }
 }
 
-pub struct JsonResponse {
-    pub json: Json<AuthResponse>,
+pub struct JsonResponse<T> {
+    pub json: Json<T>,
     pub status: Status,
 }
 
-impl JsonResponse {
-    pub fn new(json: AuthResponse, status: Status) -> JsonResponse {
+impl<T> JsonResponse<T> {
+    pub fn new(json: T, status: Status) -> JsonResponse<T> {
         JsonResponse {
             json: Json(json),
             status
@@ -95,7 +95,7 @@ impl JsonResponse {
     }
 }
 
-impl<'r> Responder<'r> for JsonResponse {
+impl<'r, T: serde::Serialize> Responder<'r> for JsonResponse<T> {
     fn respond_to(self, req: &Request) -> response::Result<'r> {
         Response::build_from(self.json.respond_to(&req).unwrap())
             .status(self.status)
@@ -104,3 +104,29 @@ impl<'r> Responder<'r> for JsonResponse {
     }
 }
 
+#[derive(Serialize)]
+pub struct TokenResponse {
+    status: JsonStatus,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    access_token: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    expires_in: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    reason: Option<String>
+}
+
+impl TokenResponse {
+    pub fn new(status: JsonStatus, access_token: Option<String>, expires_in: Option<i64>, reason: Option<String>) -> Self {
+        Self {
+            status,
+            access_token,
+            expires_in,
+            reason
+        }
+    }
+}
+
+#[derive(Deserialize)]
+pub struct TokenRequest<'a> {
+    access_token: &'a str
+}

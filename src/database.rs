@@ -10,7 +10,7 @@ pub type PostgresPooledConnection = PooledConnection<ConnectionManager<PgConnect
 // Using lazy static to have a global reference to my connection pool
 // However, I feel that for testing/mocking this won't be great.
 lazy_static! {
-    static ref POOL: PostgresPool = { init_pool() };
+    static ref POOL: PostgresPool =  init_pool();
 }
 
 fn init_pool() -> PostgresPool {
