@@ -33,8 +33,7 @@ use rocket_cors::{Error, AllowedOrigins};
 use std::time::SystemTime;
 
 fn setup_up_cors() -> Result<rocket_cors::Cors, Error> {
-    let allowed_origins_env = std::env::var("ALLOWED_ORIGINS").expect("No origins set");
-    let origins: Vec<&str> = allowed_origins_env.split(",").collect();
+    let origins: Vec<&str> = util::globals::ALLOWED_ORIGINS.split(",").collect();
     let allowed_origins = AllowedOrigins::some_exact(origins.as_slice());
 
     rocket_cors::CorsOptions {
@@ -78,6 +77,7 @@ fn main() -> Result<(), Error> {
     let routes = routes![
         controllers::users::register_user,
         controllers::users::login_user,
+        controllers::users::refresh_token,
         controllers::users::authenticate,
         controllers::oauth::twitch_auth,
         controllers::oauth::twitch_token

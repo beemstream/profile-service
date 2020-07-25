@@ -33,9 +33,10 @@ pub struct NewUser {
 }
 
 impl NewUser {
-    pub fn hash_password(&mut self) {
+    pub fn hash_password(&mut self) -> &mut Self {
         let hashed = hash(&self.password, DEFAULT_COST).unwrap();
         self.password = hashed;
+        self
     }
 }
 
