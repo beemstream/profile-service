@@ -8,7 +8,6 @@ pub trait Validator<T: Validate = Self>: Validate {
             Ok(_v) => None,
             Err(e) => {
                 let errors = e.field_errors();
-
                 let mut parsed_errors = vec![];
 
                 for key in errors.keys() {
@@ -16,18 +15,16 @@ pub trait Validator<T: Validate = Self>: Validate {
 
                     let mut v = vec![];
                     for i in 0..errors.len() {
-                        let message = errors[i].message.clone().unwrap();
-                        v.push(message.into_owned());
+                        let message = errors[i].message.as_deref().unwrap();
+                        v.push(message.to_string());
                     }
                     parsed_errors.push(FieldError::new(String::from(*key), v));
                 }
 
-                if parsed_errors.len() > 0 {
-                    Some(parsed_errors)
-                } else {
-                    None
+                match parsed_errors.len() {
+                    0 => None,
+                    _ => Some(parsed_errors)
                 }
-
             }
         }
     }

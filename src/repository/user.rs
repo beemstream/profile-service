@@ -74,6 +74,7 @@ pub fn update(id: i32, user: User) -> QueryResult<User> {
 pub fn delete(id: i32, mut user: User) -> QueryResult<User> {
     let conn = &*get_pooled_connection();
     user.is_deleted = true;
+
     diesel::update(users::table.find(id))
         .set(user)
         .get_result(conn)

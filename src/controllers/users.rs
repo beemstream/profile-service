@@ -4,7 +4,7 @@ use diesel::result::Error::DatabaseError;
 use jsonwebtoken::{decode, encode, TokenData};
 use crate::models::user::{NewUser, LoginUser, Claims, User};
 use crate::repository::user::{insert, find};
-use crate::{util::{validator::Validator, response::{JsonResponse, ApiResponse, AuthResponse, JsonStatus, StatusReason, TokenResponse}, authorization::AccessToken, globals::{SECRET_KEY, VALIDATION, COOKIE_REFRESH_TOKEN_NAME, REFRESH_TOKEN_EXPIRY, TOKEN_EXPIRY}}, jwt::generate_header};
+use crate::{util::{validator::Validator, response::{JsonResponse, AuthResponse, JsonStatus, StatusReason, TokenResponse}, authorization::AccessToken, globals::{SECRET_KEY, VALIDATION, COOKIE_REFRESH_TOKEN_NAME, REFRESH_TOKEN_EXPIRY, TOKEN_EXPIRY}}, jwt::generate_header};
 use json::Json;
 
 
@@ -55,8 +55,8 @@ pub fn login_user(user: Json<LoginUser>, cookies: Cookies) -> JsonResponse<Token
 }
 
 #[get("/authenticate")]
-pub fn authenticate(_access_token: AccessToken) -> ApiResponse {
-    ApiResponse::new(json!({ "status": "Ok" }), Status::Ok)
+pub fn authenticate(_access_token: AccessToken) -> Status {
+    Status::Ok
 }
 
 #[get("/refresh-token")]

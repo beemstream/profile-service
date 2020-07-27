@@ -12,23 +12,21 @@ pub struct TwitchGrant<'a> {
     code: &'a str
 }
 
-#[get("/auth/twitch")]
+#[get("/oauth/twitch")]
 pub fn twitch_auth() -> Redirect {
     let (auth_url, _) = twitch_authenticate();
     Redirect::to(auth_url.to_string())
 }
 
-#[post("/auth/twitch", format="application/json", data="<twitch_grant>")]
+#[post("/oauth/twitch", format="application/json", data="<twitch_grant>")]
 pub fn twitch_token(twitch_grant: Json<TwitchGrant>, mut cookies: Cookies) -> ApiResponse {
 
-    match twitch_exchange_code(String::from(twitch_grant.code)) {
+    match twitch_exchange_code(twitch_grant.code) {
         Ok(v) => {
             let access_token = v.access_token();
             let refresh_token = v.refresh_token();
             let expires_in = v.expires_in();
-            cookies.add_private(Cookie::new("access_token", access_token.secret().to_owned()));
             cookies.add_private(Cookie::new("refresh_token", refresh_token.unwrap().secret().to_owned()));
-            cookies.add(Cookie::new("expires_in", expires_in.unwrap().as_millis().to_string()));
             ApiResponse::new(json!({ "status": "OK", "access_token": access_token, "expires_in": expires_in }), Status::Ok)
         },
         Err(e) => {

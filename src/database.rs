@@ -1,7 +1,7 @@
 use diesel::pg::PgConnection;
 use r2d2::{Pool, PooledConnection};
 use r2d2_diesel::ConnectionManager;
-use std::env;
+use crate::util::globals::DATABASE_URL;
 
 // Type aliases to simplify a bit the types
 type PostgresPool = Pool<ConnectionManager<PgConnection>>;
@@ -15,8 +15,7 @@ lazy_static! {
 
 fn init_pool() -> PostgresPool {
     // I chose configuration via an environment variable
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let manager = ConnectionManager::<PgConnection>::new(database_url);
+    let manager = ConnectionManager::<PgConnection>::new(DATABASE_URL.as_str());
     Pool::builder()
         .build(manager)
         .expect("Failed to create pool.") // Unrecoverable failure!
