@@ -99,96 +99,126 @@ mod test {
     use rocket::local::Client;
     use rocket::http::{ContentType, Status, Header};
     use serde_json::Value;
+    use diesel::prelude::*;
+    use crate::schema::users;
+    use crate::database::get_pooled_connection;
+    use std::panic;
+
+    fn run_test<T>(test: T) -> ()
+        where T: FnOnce() -> () + panic::UnwindSafe
+        {
+            setup();
+
+            let result = panic::catch_unwind(|| {
+                test()
+            });
+
+            assert!(result.is_ok())
+        }
+
+    fn setup() {
+        diesel::delete(users::table).execute(&*get_pooled_connection()).unwrap();
+    }
 
     #[test]
     fn creates_user_successfully() {
-        let client = Client::new(crate::get_rocket()).expect("valid rocket instance");
-        let mut response = client
-            .post("/register")
-            .header(ContentType::JSON)
-            .body(r#"{ "username": "ibrahim", "email": "ibrahim@gmail.com", "password": "Ibrahim123123" }"#)
-            .dispatch();
-        assert_eq!(response.status(), Status::Ok);
-        assert_eq!(response.body_string(), Some("{\"status\":\"ok\"}".into()));
+        run_test(|| {
+            let client = Client::new(crate::get_rocket()).expect("valid rocket instance");
+            let mut response = client
+                .post("/register")
+                .header(ContentType::JSON)
+                .body(r#"{ "username": "ibrahim", "email": "ibrahim@gmail.com", "password": "Ibrahim123123" }"#)
+                .dispatch();
+            assert_eq!(response.status(), Status::Ok);
+            assert_eq!(response.body_string(), Some("{\"status\":\"ok\"}".into()));
+        });
     }
 
     #[test]
     fn cannot_create_user_with_same_username() {
-        let client = Client::new(crate::get_rocket()).expect("valid rocket instance");
-        client
-            .post("/register")
-            .header(ContentType::JSON)
-            .body(r#"{ "username": "foobar", "email": "foobar@gmail.com", "password": "Ibrahim123123" }"#)
-            .dispatch();
-        let mut response = client
-            .post("/register")
-            .header(ContentType::JSON)
-            .body(r#"{ "username": "foobar", "email": "foobar@gmail.com", "password": "Ibrahim123123" }"#)
-            .dispatch();
-        assert_eq!(response.status(), Status::BadRequest);
-        assert_eq!(response.body_string().unwrap().contains("Username already exists."), true);
+        run_test(|| {
+            let client = Client::new(crate::get_rocket()).expect("valid rocket instance");
+            client
+                .post("/register")
+                .header(ContentType::JSON)
+                .body(r#"{ "username": "foobar", "email": "foobar@gmail.com", "password": "Ibrahim123123" }"#)
+                .dispatch();
+            let mut response = client
+                .post("/register")
+                .header(ContentType::JSON)
+                .body(r#"{ "username": "foobar", "email": "foobar@gmail.com", "password": "Ibrahim123123" }"#)
+                .dispatch();
+            assert_eq!(response.status(), Status::BadRequest);
+            assert_eq!(response.body_string().unwrap().contains("Username already exists."), true);
+        });
     }
 
     #[test]
     fn cannot_create_user_with_not_strong_password() {
-        let client = Client::new(crate::get_rocket()).expect("valid rocket instance");
-        let mut response = client
-            .post("/register")
-            .header(ContentType::JSON)
-            .body(r#"{ "username": "bazfoo", "email": "bazfoo@gmail.com", "password": "Ibrahim123" }"#)
-            .dispatch();
-        assert_eq!(response.status(), Status::BadRequest);
-        assert_eq!(response.body_string().unwrap().contains("Password must be 12 characters or more"), true);
+        run_test(|| {
+            let client = Client::new(crate::get_rocket()).expect("valid rocket instance");
+            let mut response = client
+                .post("/register")
+                .header(ContentType::JSON)
+                .body(r#"{ "username": "bazfoo", "email": "bazfoo@gmail.com", "password": "Ibrahim123" }"#)
+                .dispatch();
+            assert_eq!(response.status(), Status::BadRequest);
+            assert_eq!(response.body_string().unwrap().contains("Password must be 12 characters or more"), true);
+        });
     }
 
     #[test]
     fn login_user_successfully() {
-        let client = Client::new(crate::get_rocket()).expect("valid rocket instance");
-        client
-            .post("/register")
-            .header(ContentType::JSON)
-            .body(r#"{ "username": "bazfoo2", "email": "bazfoo2@gmail.com", "password": "Ibrahim123123" }"#)
-            .dispatch();
+        run_test(|| {
+            let client = Client::new(crate::get_rocket()).expect("valid rocket instance");
+            client
+                .post("/register")
+                .header(ContentType::JSON)
+                .body(r#"{ "username": "bazfoo2", "email": "bazfoo2@gmail.com", "password": "Ibrahim123123" }"#)
+                .dispatch();
 
-        let mut response = client
-            .post("/login")
-            .header(ContentType::JSON)
-            .body(r#"{ "identifier": "bazfoo2", "password": "Ibrahim123123" }"#)
-            .dispatch();
+            let mut response = client
+                .post("/login")
+                .header(ContentType::JSON)
+                .body(r#"{ "identifier": "bazfoo2", "password": "Ibrahim123123" }"#)
+                .dispatch();
 
-        let body = response.body_string().unwrap();
-        assert_eq!(response.status(), Status::Ok);
-        assert_eq!(body.contains("\"status\":\"ok\""), true);
-        assert_eq!(body.contains("\"access_token\""), true);
-        assert_eq!(body.contains("\"expires_in\""), true);
+            let body = response.body_string().unwrap();
+            assert_eq!(response.status(), Status::Ok);
+            assert_eq!(body.contains("\"status\":\"ok\""), true);
+            assert_eq!(body.contains("\"access_token\""), true);
+            assert_eq!(body.contains("\"expires_in\""), true);
+        });
     }
 
     #[test]
     fn authenticates_token_successfully() {
-        let client = Client::new(crate::get_rocket()).expect("valid rocket instance");
-        client
-            .post("/register")
-            .header(ContentType::JSON)
-            .body(r#"{ "username": "bazfoo3", "email": "bazfoo3@gmail.com", "password": "Ibrahim123123" }"#)
-            .dispatch();
+        run_test(|| {
+            let client = Client::new(crate::get_rocket()).expect("valid rocket instance");
+            client
+                .post("/register")
+                .header(ContentType::JSON)
+                .body(r#"{ "username": "bazfoo3", "email": "bazfoo3@gmail.com", "password": "Ibrahim123123" }"#)
+                .dispatch();
 
-        let mut token_response = client
-            .post("/login")
-            .header(ContentType::JSON)
-            .body(r#"{ "identifier": "bazfoo3", "password": "Ibrahim123123" }"#)
-            .dispatch();
+            let mut token_response = client
+                .post("/login")
+                .header(ContentType::JSON)
+                .body(r#"{ "identifier": "bazfoo3", "password": "Ibrahim123123" }"#)
+                .dispatch();
 
-        let token: Value = serde_json::from_str(token_response.body_string().unwrap().as_str()).unwrap();
-        let access_token: String = token["access_token"].as_str().unwrap().to_owned();
+            let token: Value = serde_json::from_str(token_response.body_string().unwrap().as_str()).unwrap();
+            let access_token: String = token["access_token"].as_str().unwrap().to_owned();
 
-        let mut request = client
-            .get("/authenticate")
-            .header(ContentType::JSON);
+            let mut request = client
+                .get("/authenticate")
+                .header(ContentType::JSON);
 
-        request.add_header(Header::new("token", access_token));
+            request.add_header(Header::new("token", access_token));
 
-        let response = request.dispatch();
+            let response = request.dispatch();
 
-        assert_eq!(response.status(), Status::Ok);
+            assert_eq!(response.status(), Status::Ok);
+        });
     }
 }
