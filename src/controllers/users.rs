@@ -2,15 +2,16 @@ use rocket::http::{Status, Cookies, Cookie};
 use rocket_contrib::json;
 use diesel::result::Error::DatabaseError;
 use jsonwebtoken::{decode, encode, TokenData};
-use crate::models::user::{NewUser, LoginUser, Claims, User};
+use crate::models::user::{NewUser, LoginUser, Claims, User, NewUserRequest};
 use crate::repository::user::{insert, find};
 use crate::{util::{validator::Validator, response::{JsonResponse, AuthResponse, JsonStatus, StatusReason, TokenResponse}, authorization::AccessToken, globals::{SECRET_KEY, VALIDATION, COOKIE_REFRESH_TOKEN_NAME, REFRESH_TOKEN_EXPIRY, TOKEN_EXPIRY}}, jwt::generate_header};
 use json::Json;
 
 
 #[post("/register", format="application/json", data="<user>")]
-pub fn register_user(user: Json<NewUser>) -> JsonResponse<AuthResponse> {
-    let validation_errors = user.parsed_field_errors();
+pub fn register_user(user: Json<NewUserRequest>) -> JsonResponse<AuthResponse> {
+    let user_request = user.into_inner();
+    let validation_errors = user_request.parsed_field_errors();
     let mut auth_response: AuthResponse = AuthResponse::new(JsonStatus::Ok, None, None);
     let mut status: Status = Status::Ok;
 
@@ -20,9 +21,9 @@ pub fn register_user(user: Json<NewUser>) -> JsonResponse<AuthResponse> {
             status = Status::BadRequest;
         },
         None => {
-            let mut user: NewUser = user.into_inner();
-            user.hash_password();
-            if let Err(e) = insert(&user) {
+            let mut new_user = NewUser::from(user_request);
+            new_user.hash_password();
+            if let Err(e) = insert(&new_user) {
                 if let DatabaseError(_v, db_error) = e {
                     auth_response = AuthResponse::new(JsonStatus::NotOk, Some(StatusReason::Other(String::from(db_error.message()))), None);
                     status = Status::BadRequest;
@@ -46,7 +47,7 @@ pub fn login_user(user: Json<LoginUser>, cookies: Cookies) -> JsonResponse<Token
     ));
 
     let token_response = find(&user.identifier).ok()
-        .and_then(|u| Some(u.verify(user.password)))
+        .and_then(|u| bool_as_option(u.verify(user.password)))
         .and_then(|_| add_refresh_cookie(UserType::LoginUser(&user), cookies))
         .and_then(|_| add_token_response(UserType::LoginUser(&user)));
 
@@ -124,5 +125,12 @@ fn verify_jwt(cookie: &Cookie) -> Option<TokenData<Claims>> {
 
 fn verify_username(token_data: TokenData<Claims>) -> Option<User> {
     find(token_data.claims.sub()).ok()
+}
+
+fn bool_as_option(is_verified: bool) -> Option<bool> {
+    match is_verified {
+        true => Some(true),
+        false => None
+    }
 }
 

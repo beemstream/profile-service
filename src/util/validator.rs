@@ -4,11 +4,11 @@ use super::response::FieldError;
 pub trait Validator<T: Validate = Self>: Validate {
 
     fn parsed_field_errors(&self) -> Option<Vec<FieldError>> {
+        let mut parsed_errors = vec![];
         match self.validate() {
             Ok(_v) => None,
             Err(e) => {
                 let errors = e.field_errors();
-                let mut parsed_errors = vec![];
 
                 for key in errors.keys() {
                     let errors = errors.get(key).unwrap();

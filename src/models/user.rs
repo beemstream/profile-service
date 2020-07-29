@@ -21,14 +21,25 @@ impl User {
     }
 }
 
-#[derive(Insertable, Validate, Deserialize, Serialize)]
-#[table_name="users"]
-pub struct NewUser {
+#[derive(Deserialize, Validate, Serialize)]
+pub struct NewUserRequest {
     #[validate(email(message = "Please enter a valid email address."))]
     pub email: String,
     #[validate(length(min = 4, message = "Username must be 4 characters or more."))]
     pub username: String,
-    #[validate(length(min = 12, message = "Password must be 12 characters or more."))]
+    #[ validate(
+        length(min = 12, message = "Password must be 12 characters or more."),
+        must_match(other = "password_repeat", message = "Password does not match."))
+    ]
+    pub password: String,
+    pub password_repeat: String
+}
+
+#[derive(Insertable, Deserialize, Serialize)]
+#[table_name="users"]
+pub struct NewUser {
+    pub email: String,
+    pub username: String,
     pub password: String
 }
 
@@ -38,10 +49,18 @@ impl NewUser {
         self.password = hashed;
         self
     }
+
+    pub fn from(new_user_request: NewUserRequest) -> Self {
+        Self {
+            username: new_user_request.username,
+            email: new_user_request.email,
+            password: new_user_request.password
+        }
+    }
 }
 
 
-impl Validator for NewUser { }
+impl Validator for NewUserRequest { }
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct LoginUser<'a> {
