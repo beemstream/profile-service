@@ -1,10 +1,10 @@
-use super::run_test;
-use rocket::{http::{Status, ContentType}, local::Client};
+use super::{get_client, run_test};
+use rocket::http::{Status, ContentType};
 
 #[test]
 fn creates_user_successfully() {
     run_test(|| {
-        let client = Client::new(crate::get_rocket()).expect("valid rocket instance");
+        let client = get_client();
         let mut response = client
             .post("/register")
             .header(ContentType::JSON)
@@ -15,11 +15,10 @@ fn creates_user_successfully() {
     });
 }
 
-
 #[test]
 fn cannot_create_with_not_same_password() {
     run_test(|| {
-        let client = Client::new(crate::get_rocket()).expect("valid rocket instance");
+        let client = get_client();
         let mut response = client
             .post("/register")
             .header(ContentType::JSON)
@@ -37,7 +36,7 @@ fn cannot_create_with_not_same_password() {
 #[test]
 fn cannot_create_user_with_same_username() {
     run_test(|| {
-        let client = Client::new(crate::get_rocket()).expect("valid rocket instance");
+        let client = get_client();
         client
             .post("/register")
             .header(ContentType::JSON)
@@ -58,16 +57,16 @@ fn cannot_create_user_with_same_username() {
 #[test]
 fn cannot_create_user_with_same_email() {
     run_test(|| {
-        let client = Client::new(crate::get_rocket()).expect("valid rocket instance");
+        let client = get_client();
         client
             .post("/register")
             .header(ContentType::JSON)
-            .body(r#"{ "username": "foobar3", "email": "foobar@gmail.com", "password": "Ibrahim123123", "password_repeat": "Ibrahim123123" }"#)
+            .body(r#"{ "username": "foobar3", "email": "foobar3@gmail.com", "password": "Ibrahim123123", "password_repeat": "Ibrahim123123" }"#)
             .dispatch();
         let mut response = client
             .post("/register")
             .header(ContentType::JSON)
-            .body(r#"{ "username": "different_username", "email": "foobar@gmail.com", "password": "Ibrahim123123", "password_repeat": "Ibrahim123123" }"#)
+            .body(r#"{ "username": "different_username", "email": "foobar3@gmail.com", "password": "Ibrahim123123", "password_repeat": "Ibrahim123123" }"#)
             .dispatch();
 
         assert_eq!(response.status(), Status::BadRequest);
@@ -78,7 +77,7 @@ fn cannot_create_user_with_same_email() {
 #[test]
 fn cannot_create_user_with_not_strong_password() {
     run_test(|| {
-        let client = Client::new(crate::get_rocket()).expect("valid rocket instance");
+        let client = get_client();
         let mut response = client
             .post("/register")
             .header(ContentType::JSON)
@@ -93,7 +92,7 @@ fn cannot_create_user_with_not_strong_password() {
 #[test]
 fn cannot_create_user_with_incorrect_email() {
     run_test(|| {
-        let client = Client::new(crate::get_rocket()).expect("valid rocket instance");
+        let client = get_client();
         let mut response = client
             .post("/register")
             .header(ContentType::JSON)

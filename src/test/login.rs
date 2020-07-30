@@ -1,10 +1,10 @@
-use super::{create_user, run_test};
-use rocket::{http::{Status, ContentType}, local::Client};
+use super::{create_user, run_test, get_client};
+use rocket::http::{Status, ContentType};
 
 #[test]
 fn login_user_successfully_with_username() {
     run_test(|| {
-        let client = Client::new(crate::get_rocket()).expect("valid rocket instance");
+        let client = get_client();
         create_user(&client, "login");
 
         let mut response = client
@@ -24,7 +24,7 @@ fn login_user_successfully_with_username() {
 #[test]
 fn login_user_successfully_with_email() {
     run_test(|| {
-        let client = Client::new(crate::get_rocket()).expect("valid rocket instance");
+        let client = get_client();
         create_user(&client, "email_login");
 
         let mut response = client
@@ -44,7 +44,7 @@ fn login_user_successfully_with_email() {
 #[test]
 fn fails_login_username_with_wrong_password() {
     run_test(|| {
-        let client = Client::new(crate::get_rocket()).expect("valid rocket instance");
+        let client = get_client();
         create_user(&client, "wrongpassword");
 
         let mut response = client
@@ -64,7 +64,7 @@ fn fails_login_username_with_wrong_password() {
 #[test]
 fn fails_login_email_with_wrong_password() {
     run_test(|| {
-        let client = Client::new(crate::get_rocket()).expect("valid rocket instance");
+        let client = get_client();
         create_user(&client, "wrongpasswordemail");
 
         let mut response = client

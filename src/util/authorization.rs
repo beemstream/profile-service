@@ -1,4 +1,4 @@
-use jsonwebtoken::decode;
+use jsonwebtoken::{DecodingKey, decode};
 use crate::{jwt::jwt_validation, models::user::Claims, repository::user::find, util::globals::SECRET_KEY};
 use rocket::{Outcome, request::FromRequest, http::Status};
 
@@ -11,7 +11,8 @@ pub enum AccessTokenError {
 }
 
 pub fn is_token_valid(token: &str) -> bool {
-    match decode::<Claims>(token, &*SECRET_KEY.as_ref(), &jwt_validation()) {
+    let decode_key = DecodingKey::from_secret(&SECRET_KEY.as_ref());
+    match decode::<Claims>(token, &decode_key, &jwt_validation()) {
         Ok(t) => find(t.claims.sub()).is_ok(),
         Err(_) => false
     }

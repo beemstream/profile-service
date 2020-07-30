@@ -1,7 +1,7 @@
 use rocket::http::{Status, Cookies, Cookie};
 use rocket_contrib::json;
 use diesel::result::Error::DatabaseError;
-use jsonwebtoken::{decode, encode, TokenData};
+use jsonwebtoken::{decode, encode, TokenData, DecodingKey, EncodingKey};
 use crate::models::user::{NewUser, LoginUser, Claims, User, NewUserRequest};
 use crate::repository::user::{insert, find};
 use crate::{util::{validator::Validator, response::{JsonResponse, AuthResponse, JsonStatus, StatusReason, TokenResponse}, authorization::AccessToken, globals::{SECRET_KEY, VALIDATION, COOKIE_REFRESH_TOKEN_NAME, REFRESH_TOKEN_EXPIRY, TOKEN_EXPIRY}}, jwt::generate_header};
@@ -61,7 +61,7 @@ pub fn authenticate(_access_token: AccessToken) -> Status {
 }
 
 #[get("/refresh-token")]
-pub fn refresh_token(mut cookie: Cookies) -> JsonResponse<TokenResponse> {
+pub fn refresh_token(mut cookie: Cookies, _access_token: AccessToken) -> JsonResponse<TokenResponse> {
     let refresh_token = cookie.get_private(COOKIE_REFRESH_TOKEN_NAME);
 
     let error_response = Some((
@@ -89,7 +89,8 @@ fn get_new_token(user_type: &UserType, duration: i64) -> (Claims, String) {
         UserType::LoginUser(u) => Claims::new(u.identifier, duration),
         UserType::StoredUser(u) => Claims::new(&u.username, duration),
     };
-    let new_token = encode(&generate_header(), &claims, &SECRET_KEY.as_ref()).unwrap();
+    let encode_key = EncodingKey::from_secret(&SECRET_KEY.as_ref());
+    let new_token = encode(&generate_header(), &claims, &encode_key).unwrap();
     (claims, new_token)
 }
 
@@ -120,7 +121,8 @@ fn add_token_response<'a>(user: UserType<'a>) -> Option<(TokenResponse, Status)>
 }
 
 fn verify_jwt(cookie: &Cookie) -> Option<TokenData<Claims>> {
-    decode::<Claims>(cookie.value(), &SECRET_KEY.as_ref(), &VALIDATION).ok()
+    let decode_key = DecodingKey::from_secret(&SECRET_KEY.as_ref());
+    decode::<Claims>(cookie.value(), &decode_key, &VALIDATION).ok()
 }
 
 fn verify_username(token_data: TokenData<Claims>) -> Option<User> {
