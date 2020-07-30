@@ -103,19 +103,20 @@ fn get_exp_time(claims: Claims) -> chrono::Duration {
 fn get_cookie_with_expiry_and_max_age<'a>(exp_time: chrono::Duration, refresh_token: String) -> Cookie<'a> {
     Cookie::build(COOKIE_REFRESH_TOKEN_NAME, refresh_token)
             .max_age(exp_time)
-            .expires(time::now_utc() + chrono::Duration::seconds(REFRESH_TOKEN_EXPIRY))
+            .expires(time::now_utc() + chrono::Duration::seconds(*REFRESH_TOKEN_EXPIRY))
             .finish()
 }
 
 fn add_refresh_cookie<'a>(user: UserType<'a>, mut cookie: Cookies) -> Option<UserType<'a>> {
-    let (refresh_claims, refresh_token) = get_new_token(&user, REFRESH_TOKEN_EXPIRY);
+    let (refresh_claims, refresh_token) = get_new_token(&user, *REFRESH_TOKEN_EXPIRY);
     let refresh_exp = get_exp_time(refresh_claims);
     cookie.add_private(get_cookie_with_expiry_and_max_age(refresh_exp, refresh_token));
     Some(user)
 }
 
 fn add_token_response<'a>(user: UserType<'a>) -> Option<(TokenResponse, Status)> {
-    let (claims, token) = get_new_token(&user, TOKEN_EXPIRY);
+    println!("TOKEN EXPIRY {}", *TOKEN_EXPIRY);
+    let (claims, token) = get_new_token(&user, *TOKEN_EXPIRY);
     let token_exp = get_exp_time(claims);
     Some((TokenResponse::new(JsonStatus::Ok, Some(token), Some(token_exp.num_seconds()), None), Status::Ok))
 }
