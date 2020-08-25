@@ -33,19 +33,13 @@ pub const COOKIE_REFRESH_TOKEN_NAME: &str = "refresh_token";
 
 lazy_static! {
     pub static ref TOKEN_EXPIRY: i64 = {
-        match std::env::var("TOKEN_EXPIRY") {
-            Ok(n) => n.parse::<i64>().expect("TOKEN_EXPIRY must be number in seconds."),
-            Err(_) => 120
-        }
+        std::env::var("TOKEN_EXPIRY").map_or_else(|_| 120, |v| v.parse::<i64>().expect("TOKEN_EXPIRY must be number in seconds."))
     };
 }
 
 lazy_static! {
     pub static ref REFRESH_TOKEN_EXPIRY: i64 = {
-        match std::env::var("REFRESH_TOKEN_EXPIRY") {
-            Ok(n) => n.parse::<i64>().expect("REFRESH_TOKEN_EXPIRY must be number in seconds."),
-            Err(_) => 60 * 60 * 24 * 3
-        }
+        std::env::var("REFRESH_TOKEN_EXPIRY").map_or_else(|_| 60 * 60 * 24 * 3, |v| v.parse::<i64>().expect("REFRESH_TOKEN_EXPIRY must be number in seconds."))
     };
 
 }
