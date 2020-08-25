@@ -71,7 +71,7 @@ pub fn get_internal_json_response() -> Option<(AuthResponse, Status)> {
     Some((auth_response, status))
 }
 
-pub fn get_validation_errors(errors: Vec<FieldError>) -> Option<(AuthResponse, Status)> {
+pub fn get_validation_errors_response(errors: Vec<FieldError>) -> Option<(AuthResponse, Status)> {
     let auth_response = AuthResponse::new(JsonStatus::NotOk, Some(StatusReason::FieldErrors), Some(errors));
     let status = Status::BadRequest;
     Some((auth_response, status))

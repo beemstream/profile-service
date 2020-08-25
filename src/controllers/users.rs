@@ -4,7 +4,7 @@ use crate::models::user::{NewUser, LoginUser, NewUserRequest, UserType};
 use crate::repository::user::{insert, find};
 use crate::util::{validator::Validator, response::{JsonResponse, AuthResponse, JsonStatus, TokenResponse}, authorization::AccessToken, globals::COOKIE_REFRESH_TOKEN_NAME};
 use json::Json;
-use super::users_util::{add_refresh_cookie, add_token_response, verify_jwt, verify_username, get_validation_errors, get_success_json_response, get_auth_error_response, verify_non_hashed_password};
+use super::users_util::{add_refresh_cookie, add_token_response, verify_jwt, verify_username, get_validation_errors_response, get_success_json_response, get_auth_error_response, verify_non_hashed_password};
 
 #[post("/register", format="application/json", data="<user>")]
 pub fn register_user(user: Json<NewUserRequest>) -> JsonResponse<AuthResponse> {
@@ -14,7 +14,7 @@ pub fn register_user(user: Json<NewUserRequest>) -> JsonResponse<AuthResponse> {
     let respond_with_success = || get_success_json_response();
 
     let respond_with_validation_errors = validation_errors
-        .and_then(|errors| get_validation_errors(errors));
+        .and_then(|errors| get_validation_errors_response(errors));
 
     let try_register_or_error = || Some(NewUser::from(user_request))
         .as_mut()
@@ -47,11 +47,6 @@ pub fn login_user(user: Json<LoginUser>, cookies: Cookies) -> JsonResponse<Token
     JsonResponse::new(response, status)
 }
 
-#[get("/authenticate")]
-pub fn authenticate(_access_token: AccessToken) -> Status {
-    Status::Ok
-}
-
 #[get("/refresh-token")]
 pub fn refresh_token(mut cookie: Cookies, _access_token: AccessToken) -> JsonResponse<TokenResponse> {
     let refresh_token = cookie.get_private(COOKIE_REFRESH_TOKEN_NAME);
@@ -69,4 +64,9 @@ pub fn refresh_token(mut cookie: Cookies, _access_token: AccessToken) -> JsonRes
 
     let (response, status) = token_response.or_else(|| error_response).unwrap();
     JsonResponse::new(response, status)
+}
+
+#[get("/authenticate")]
+pub fn authenticate(_access_token: AccessToken) -> Status {
+    Status::Ok
 }
