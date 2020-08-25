@@ -3,6 +3,11 @@ use crate::{util::validator::Validator, schema::users};
 use bcrypt::{DEFAULT_COST, hash, verify};
 use validator::Validate;
 
+pub enum UserType<'a> {
+    LoginUser(&'a LoginUser<'a>),
+    StoredUser(&'a User)
+}
+
 #[derive(Queryable, AsChangeset, Serialize, Deserialize)]
 #[table_name="users"]
 pub struct User {
