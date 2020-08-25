@@ -2,7 +2,7 @@ use jsonwebtoken::{encode, EncodingKey, DecodingKey, decode, TokenData};
 use crate::{models::user::{UserType, Claims, User}, jwt::generate_header};
 use crate::{util::{response::{JsonStatus, TokenResponse, AuthResponse, StatusReason, FieldError}, globals::{SECRET_KEY, VALIDATION, COOKIE_REFRESH_TOKEN_NAME, REFRESH_TOKEN_EXPIRY, TOKEN_EXPIRY}}, repository::user::find};
 use rocket::http::{Status, Cookie, Cookies};
-use diesel::result::{Error, DatabaseError, DatabaseErrorInformation};
+use diesel::result::{Error, DatabaseErrorInformation};
 
 pub fn get_new_token(user_type: &UserType, duration: i64) -> (Claims, String) {
     let claims = match user_type {
@@ -25,6 +25,10 @@ pub fn get_cookie_with_expiry_and_max_age<'a>(exp_time: chrono::Duration, refres
             .max_age(exp_time)
             .expires(time::now_utc() + chrono::Duration::seconds(*REFRESH_TOKEN_EXPIRY))
             .finish()
+}
+
+pub fn verify_non_hashed_password(user: User, password: &str) -> Option<bool> {
+    bool_as_option(user.verify(password))
 }
 
 pub fn add_refresh_cookie<'a>(user: UserType<'a>, mut cookie: Cookies) -> Option<UserType<'a>> {
@@ -81,7 +85,7 @@ pub fn get_database_error_response(db_error: Box<dyn DatabaseErrorInformation + 
 
 pub fn get_auth_error_response(error: Error) -> Option<(AuthResponse, Status)> {
     match error {
-        DatabaseError(_, db_error) => get_database_error_response(db_error),
+        Error::DatabaseError(_, db_error) => get_database_error_response(db_error),
         _ => get_internal_json_response()
     }
 }

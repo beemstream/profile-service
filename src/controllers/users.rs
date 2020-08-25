@@ -4,7 +4,7 @@ use crate::models::user::{NewUser, LoginUser, NewUserRequest, UserType};
 use crate::repository::user::{insert, find};
 use crate::util::{validator::Validator, response::{JsonResponse, AuthResponse, JsonStatus, TokenResponse}, authorization::AccessToken, globals::COOKIE_REFRESH_TOKEN_NAME};
 use json::Json;
-use super::users_util::{add_refresh_cookie, bool_as_option, add_token_response, verify_jwt, verify_username, get_validation_errors, get_success_json_response, get_auth_error_response};
+use super::users_util::{add_refresh_cookie, add_token_response, verify_jwt, verify_username, get_validation_errors, get_success_json_response, get_auth_error_response, verify_non_hashed_password};
 
 #[post("/register", format="application/json", data="<user>")]
 pub fn register_user(user: Json<NewUserRequest>) -> JsonResponse<AuthResponse> {
@@ -16,14 +16,14 @@ pub fn register_user(user: Json<NewUserRequest>) -> JsonResponse<AuthResponse> {
     let respond_with_validation_errors = validation_errors
         .and_then(|errors| get_validation_errors(errors));
 
-    let try_register_user = || Some(NewUser::from(user_request))
+    let try_register_or_error = || Some(NewUser::from(user_request))
         .as_mut()
         .and_then(|user| Some(user.hash_password()))
         .and_then(|user| insert(&user).err())
         .and_then(|err| get_auth_error_response(err));
 
     let (auth_response, status) = respond_with_validation_errors
-        .or_else(try_register_user)
+        .or_else(try_register_or_error)
         .or_else(respond_with_success).unwrap();
 
     JsonResponse::new(auth_response, status)
@@ -39,7 +39,7 @@ pub fn login_user(user: Json<LoginUser>, cookies: Cookies) -> JsonResponse<Token
     ));
 
     let token_response = find(&user.identifier).ok()
-        .and_then(|u| bool_as_option(u.verify(user.password)))
+        .and_then(|u| verify_non_hashed_password(u, user.password))
         .and_then(|_| add_refresh_cookie(UserType::LoginUser(&user), cookies))
         .and_then(|_| add_token_response(UserType::LoginUser(&user)));
 
