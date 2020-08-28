@@ -1,4 +1,4 @@
-use crate::models::user::{NewUser, LoginUser, User};
+use crate::models::user::{NewUser, User};
 use crate::database::get_pooled_connection;
 use diesel::result::Error::DatabaseError;
 use diesel::result::DatabaseErrorKind::UniqueViolation;

@@ -128,5 +128,6 @@ impl TokenResponse {
 
 #[derive(Deserialize)]
 pub struct TokenRequest<'a> {
+    #[allow(dead_code)]
     access_token: &'a str
 }
