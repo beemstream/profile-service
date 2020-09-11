@@ -1,32 +1,8 @@
-use rocket_contrib::json::{Json, JsonValue};
+use rocket_contrib::json::Json;
 use rocket::response::{self, Responder, Response};
 use rocket::http::{Status, ContentType};
 use rocket::request::Request;
 use serde::{Serialize, Deserialize};
-
-#[derive(Debug)]
-pub struct ApiResponse {
-    pub json: JsonValue,
-    pub status: Status,
-}
-
-impl ApiResponse {
-    pub fn new(json: JsonValue, status: Status) -> ApiResponse {
-        ApiResponse {
-            json,
-            status
-        }
-    }
-}
-
-impl<'r> Responder<'r> for ApiResponse {
-    fn respond_to(self, req: &Request) -> response::Result<'r> {
-        Response::build_from(self.json.respond_to(&req).unwrap())
-            .status(self.status)
-            .header(ContentType::JSON)
-            .ok()
-    }
-}
 
 #[derive(Serialize)]
 pub enum JsonStatus {
@@ -72,11 +48,27 @@ pub struct AuthResponse {
 }
 
 impl AuthResponse {
-    pub fn new(status: JsonStatus, reason: Option<StatusReason>, fields: Option<Vec<FieldError>>) -> Self {
+    pub fn success() -> Self {
         Self {
-            status,
-            reason,
-            fields
+            status: JsonStatus::Ok,
+            reason: None,
+            fields: None
+        }
+    }
+
+    pub fn validation_error(reason: StatusReason, fields: Vec<FieldError>) -> Self {
+        Self {
+            status: JsonStatus::NotOk,
+            reason: Some(reason),
+            fields: Some(fields)
+        }
+    }
+
+    pub fn internal_error(reason: StatusReason) -> Self {
+        Self {
+            status: JsonStatus::Error,
+            reason: Some(reason),
+            fields: None
         }
     }
 }
@@ -116,12 +108,21 @@ pub struct TokenResponse {
 }
 
 impl TokenResponse {
-    pub fn new(status: JsonStatus, access_token: Option<String>, expires_in: Option<i64>, reason: Option<String>) -> Self {
+    pub fn success(status: JsonStatus, access_token: String, expires_in: i64) -> Self {
         Self {
             status,
-            access_token,
-            expires_in,
-            reason
+            access_token: Some(access_token),
+            expires_in: Some(expires_in),
+            reason: None
+        }
+    }
+
+    pub fn error(status: JsonStatus, reason: String) -> Self {
+        Self {
+            status,
+            reason: Some(reason),
+            expires_in: None,
+            access_token: None
         }
     }
 }

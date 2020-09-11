@@ -47,12 +47,11 @@ pub fn twitch_client() -> TwitchOauthClient {
     client
 }
 
-pub type OAuthExchangeResult = 
-    Result<
-        TwitchTokenResponse<TwitchFields, BasicTokenType>,
-        RequestTokenError<BasicErrorResponseType>
-    >;
+pub type OAuthExchangeResult = Result<ExchangeSuccess, ExchangeError>;
 
+pub type ExchangeSuccess = TwitchTokenResponse<TwitchFields, BasicTokenType>;
+
+pub type ExchangeError = RequestTokenError<BasicErrorResponseType>;
 
 pub type TwitchOauthClient = Client<BasicErrorResponseType, TwitchTokenResponse<TwitchFields, BasicTokenType>, BasicTokenType>;
 
