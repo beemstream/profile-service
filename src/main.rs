@@ -33,7 +33,6 @@ mod test;
 use dotenv::dotenv;
 use rocket::{http::Method::{Get, Post}, Rocket, Route};
 use rocket_cors::{Error, AllowedOrigins};
-use std::time::SystemTime;
 
 fn setup_up_cors() -> Result<rocket_cors::Cors, Error> {
     let origins: Vec<&str> = util::globals::ALLOWED_ORIGINS.split(",").collect();
@@ -46,9 +45,6 @@ fn setup_up_cors() -> Result<rocket_cors::Cors, Error> {
         ..Default::default()
     }.to_cors()
 }
-
-#[derive(Copy, Clone)]
-struct TimerStart(Option<SystemTime>);
 
 fn get_rocket() -> Rocket {
     dotenv().ok();

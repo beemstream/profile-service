@@ -4,7 +4,7 @@ use crate::models::user::{NewUser, LoginUser, NewUserRequest, UserType};
 use crate::repository::user::{insert, find};
 use crate::util::{validator::Validator, response::{JsonResponse, AuthResponse, JsonStatus, TokenResponse}, authorization::AccessToken, globals::COOKIE_REFRESH_TOKEN_NAME};
 use json::Json;
-use super::users_util::{add_refresh_cookie, add_token_response, verify_jwt, verify_username, get_validation_errors_response, get_success_json_response, get_auth_error_response, verify_non_hashed_password};
+use super::users_util::{add_refresh_cookie, add_token_response, verify_jwt, verify_username, get_validation_errors_response, get_success_json_response, get_auth_error_response, verify_non_hashed_password, update_refresh_token_cache};
 
 #[post("/register", format="application/json", data="<user>")]
 pub fn register_user(user: Json<NewUserRequest>) -> JsonResponse<AuthResponse> {
@@ -34,7 +34,7 @@ pub fn login_user(user: Json<LoginUser>, cookies: Cookies) -> JsonResponse<Token
     let user: LoginUser = user.into_inner();
 
     let error_response = || Some((
-            TokenResponse::new(JsonStatus::NotOk, None, None, Some("Username/email or password is incorrect.".to_string())),
+            TokenResponse::error(JsonStatus::NotOk, "Username/email or password is incorrect.".to_string()),
             Status::Unauthorized
     ));
 
@@ -52,13 +52,14 @@ pub fn refresh_token(mut cookie: Cookies, _access_token: AccessToken) -> JsonRes
     let refresh_token = cookie.get_private(COOKIE_REFRESH_TOKEN_NAME);
 
     let error_response = Some((
-            TokenResponse::new(JsonStatus::NotOk, None, None, None),
+            TokenResponse::error(JsonStatus::NotOk, "Unauthorized".to_string()),
             Status::Unauthorized
     ));
     let token_response = refresh_token.as_ref()
         .and_then(|t| verify_jwt(t))
         .and_then(|token_data| verify_username(token_data))
         .as_ref()
+        .and_then(|user| update_refresh_token_cache(user))
         .and_then(|user| add_refresh_cookie(UserType::StoredUser(&user), cookie))
         .and_then(|user| add_token_response(user));
 

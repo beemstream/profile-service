@@ -41,7 +41,7 @@ pub fn add_refresh_cookie<'a>(user: UserType<'a>, mut cookie: Cookies) -> Option
 pub fn add_token_response<'a>(user: UserType<'a>) -> Option<(TokenResponse, Status)> {
     let (claims, token) = get_new_token(&user, *TOKEN_EXPIRY);
     let token_exp = get_exp_time(claims);
-    Some((TokenResponse::new(JsonStatus::Ok, Some(token), Some(token_exp.num_seconds()), None), Status::Ok))
+    Some((TokenResponse::success(JsonStatus::Ok, token, token_exp.num_seconds()), Status::Ok))
 }
 
 pub fn verify_jwt(cookie: &Cookie) -> Option<TokenData<Claims>> {
@@ -61,31 +61,33 @@ pub fn bool_as_option(is_verified: bool) -> Option<bool> {
 }
 
 pub fn get_success_json_response() -> Option<(AuthResponse, Status)> {
-    let auth_response: AuthResponse = AuthResponse::new(JsonStatus::Ok, None, None);
+    let auth_response: AuthResponse = AuthResponse::success();
     Some((auth_response, Status::Ok))
 }
 
-pub fn get_internal_json_response() -> Option<(AuthResponse, Status)> {
-    let auth_response = AuthResponse::new(JsonStatus::Error, Some(StatusReason::ServerError), None);
-    let status = Status::InternalServerError;
-    Some((auth_response, status))
+pub fn get_internal_error_response() -> Option<(AuthResponse, Status)> {
+    let auth_response = AuthResponse::internal_error(StatusReason::ServerError);
+    Some((auth_response, Status::InternalServerError))
 }
 
 pub fn get_validation_errors_response(errors: Vec<FieldError>) -> Option<(AuthResponse, Status)> {
-    let auth_response = AuthResponse::new(JsonStatus::NotOk, Some(StatusReason::FieldErrors), Some(errors));
-    let status = Status::BadRequest;
-    Some((auth_response, status))
+    let auth_response = AuthResponse::validation_error(StatusReason::FieldErrors, errors);
+    Some((auth_response, Status::BadRequest))
 }
 
 pub fn get_database_error_response(db_error: Box<dyn DatabaseErrorInformation + Send + Sync>) -> Option<(AuthResponse, Status)> {
-    let auth_response = AuthResponse::new(JsonStatus::NotOk, Some(StatusReason::Other(String::from(db_error.message()))), None);
-    let status = Status::BadRequest;
-    Some((auth_response, status))
+    let db_error_message = String::from(db_error.message());
+    let auth_response = AuthResponse::validation_error(StatusReason::Other(db_error_message), vec![]);
+    Some((auth_response, Status::BadRequest))
 }
 
 pub fn get_auth_error_response(error: Error) -> Option<(AuthResponse, Status)> {
     match error {
         Error::DatabaseError(_, db_error) => get_database_error_response(db_error),
-        _ => get_internal_json_response()
+        _ => get_internal_error_response()
     }
+}
+
+pub fn update_refresh_token_cache(user: &User) -> Option<&User> {
+    Some(user)
 }
