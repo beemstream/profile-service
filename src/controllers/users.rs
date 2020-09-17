@@ -1,6 +1,6 @@
 use rocket::http::{Status, Cookies};
 use rocket_contrib::json;
-use crate::models::user::{NewUser, LoginUser, NewUserRequest, UserType};
+use crate::{models::user::{NewUser, LoginUser, NewUserRequest, UserType}, repository::user::has_duplicate_user_or_email};
 use crate::repository::user::{insert, find};
 use crate::util::{validator::Validator, response::{JsonResponse, AuthResponse, JsonStatus, TokenResponse}, authorization::AccessToken, globals::COOKIE_REFRESH_TOKEN_NAME};
 use json::Json;
@@ -16,13 +16,18 @@ pub fn register_user(user: Json<NewUserRequest>) -> JsonResponse<AuthResponse> {
     let respond_with_validation_errors = validation_errors
         .and_then(|errors| get_validation_errors_response(errors));
 
-    let try_register_or_error = || Some(NewUser::from(user_request))
+    let response_with_duplicate_error = || Some(&user_request)
+        .and_then(|user| has_duplicate_user_or_email(user).err())
+        .and_then(|err| get_auth_error_response(err));
+
+    let try_register_or_error = || Some(NewUser::from(&user_request))
         .as_mut()
         .and_then(|user| Some(user.hash_password()))
         .and_then(|user| insert(&user).err())
         .and_then(|err| get_auth_error_response(err));
 
     let (auth_response, status) = respond_with_validation_errors
+        .or_else(response_with_duplicate_error)
         .or_else(try_register_or_error)
         .or_else(respond_with_success).unwrap();
 

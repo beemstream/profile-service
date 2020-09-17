@@ -1,6 +1,6 @@
 use serde::{Serialize, Deserialize};
 use crate::{util::validator::Validator, schema::users};
-use bcrypt::{hash, verify};
+use bcrypt::{hash, verify, DEFAULT_COST};
 use validator::Validate;
 
 pub enum UserType<'a> {
@@ -48,20 +48,18 @@ pub struct NewUser {
     pub password: String
 }
 
-const HASH_COST: u32 = 16;
-
 impl NewUser {
     pub fn hash_password(&mut self) -> &mut Self {
-        let hashed = hash(&self.password, HASH_COST).unwrap();
+        let hashed = hash(&self.password, DEFAULT_COST).unwrap();
         self.password = hashed;
         self
     }
 
-    pub fn from(new_user_request: NewUserRequest) -> Self {
+    pub fn from(new_user_request: &NewUserRequest) -> Self {
         Self {
-            username: new_user_request.username,
-            email: new_user_request.email,
-            password: new_user_request.password
+            username: new_user_request.username.to_owned(),
+            email: new_user_request.email.to_owned(),
+            password: new_user_request.password.to_owned()
         }
     }
 }

@@ -1,4 +1,4 @@
-use crate::models::user::{NewUser, User};
+use crate::models::user::{NewUser, User, NewUserRequest};
 use crate::database::get_pooled_connection;
 use diesel::result::Error::DatabaseError;
 use diesel::result::DatabaseErrorKind::UniqueViolation;
@@ -36,7 +36,7 @@ pub fn get_by_email(email: &String, conn: &PgConnection) -> QueryResult<i32> {
     users::table.select(users::id).filter(users::email.eq(&email)).get_result::<i32>(conn)
 }
 
-pub fn insert(user: &NewUser) -> Result<usize, diesel::result::Error> {
+pub fn has_duplicate_user_or_email(user: &NewUserRequest) -> Result<&NewUserRequest, diesel::result::Error> {
     let conn = &*get_pooled_connection();
     let found_username = get_by_username(&user.username, conn);
     let found_email = get_by_email(&user.email, conn);
@@ -49,10 +49,27 @@ pub fn insert(user: &NewUser) -> Result<usize, diesel::result::Error> {
     } else if is_found_by_email {
         Err(DatabaseError(UniqueViolation, RegisterError::new("email", "Email already exists.")))
     } else {
+        Ok(user)
+    }
+}
+
+pub fn insert(user: &NewUser) -> Result<usize, diesel::result::Error> {
+    let conn = &*get_pooled_connection();
+    // let found_username = get_by_username(&user.username, conn);
+    // let found_email = get_by_email(&user.email, conn);
+
+    // let is_found_by_username = has_found_user(found_username);
+    // let is_found_by_email = has_found_user(found_email);
+
+    // if is_found_by_username {
+    //     Err(DatabaseError(UniqueViolation, RegisterError::new("username", "Username already exists.")))
+    // } else if is_found_by_email {
+    //     Err(DatabaseError(UniqueViolation, RegisterError::new("email", "Email already exists.")))
+    // } else {
         diesel::insert_into(users::table)
             .values(user)
             .execute(conn)
-    }
+    // }
 }
 
 pub fn find(identifier: &str) -> Result<User, diesel::result::Error> {
