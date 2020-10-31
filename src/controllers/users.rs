@@ -1,10 +1,10 @@
 use rocket::http::{Status, Cookies};
 use rocket_contrib::json;
-use crate::{models::user::{NewUser, LoginUser, NewUserRequest, UserType}, repository::user::has_duplicate_user_or_email};
+use crate::{models::user::{NewUser, LoginUser, NewUserRequest, UserType}, repository::user::is_duplicate_user_or_email};
 use crate::repository::user::{insert, find};
 use crate::util::{validator::Validator, response::{JsonResponse, AuthResponse, JsonStatus, TokenResponse}, authorization::AccessToken, globals::COOKIE_REFRESH_TOKEN_NAME};
 use json::Json;
-use super::users_util::{add_refresh_cookie, add_token_response, verify_jwt, verify_username, get_validation_errors_response, get_success_json_response, get_auth_error_response, verify_non_hashed_password, update_refresh_token_cache};
+use super::users_util::{add_refresh_cookie, add_token_response, get_auth_error_response, get_success_json_response, get_validation_errors_response, update_refresh_token_cache, verify_jwt, verify_non_hashed_password, verify_username};
 
 #[post("/register", format="application/json", data="<user>")]
 pub fn register_user(user: Json<NewUserRequest>) -> JsonResponse<AuthResponse> {
@@ -17,7 +17,7 @@ pub fn register_user(user: Json<NewUserRequest>) -> JsonResponse<AuthResponse> {
         .and_then(|errors| get_validation_errors_response(errors));
 
     let response_with_duplicate_error = || Some(&user_request)
-        .and_then(|user| has_duplicate_user_or_email(user).err())
+        .and_then(|user| is_duplicate_user_or_email(user).err())
         .and_then(|err| get_auth_error_response(err));
 
     let try_register_or_error = || Some(NewUser::from(&user_request))
@@ -44,7 +44,7 @@ pub fn login_user(user: Json<LoginUser>, cookies: Cookies) -> JsonResponse<Token
     ));
 
     let token_response = find(&user.identifier).ok()
-        .and_then(|u| verify_non_hashed_password(u, user.password))
+        .and_then(|found_user| verify_non_hashed_password(found_user, user.password))
         .and_then(|_| add_refresh_cookie(UserType::LoginUser(&user), cookies))
         .and_then(|_| add_token_response(UserType::LoginUser(&user)));
 

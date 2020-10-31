@@ -36,7 +36,7 @@ pub fn get_by_email(email: &String, conn: &PgConnection) -> QueryResult<i32> {
     users::table.select(users::id).filter(users::email.eq(&email)).get_result::<i32>(conn)
 }
 
-pub fn has_duplicate_user_or_email(user: &NewUserRequest) -> Result<&NewUserRequest, diesel::result::Error> {
+pub fn is_duplicate_user_or_email(user: &NewUserRequest) -> Result<&NewUserRequest, diesel::result::Error> {
     let conn = &*get_pooled_connection();
     let found_username = get_by_username(&user.username, conn);
     let found_email = get_by_email(&user.email, conn);
