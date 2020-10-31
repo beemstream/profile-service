@@ -1,7 +1,7 @@
 use jsonwebtoken::{encode, EncodingKey, DecodingKey, decode, TokenData};
 use crate::{models::user::{UserType, Claims, User}, jwt::generate_header};
 use crate::{util::{response::{JsonStatus, TokenResponse, AuthResponse, StatusReason, FieldError}, globals::{SECRET_KEY, VALIDATION, COOKIE_REFRESH_TOKEN_NAME, REFRESH_TOKEN_EXPIRY, TOKEN_EXPIRY}}, repository::user::find};
-use rocket::http::{Status, Cookie, Cookies};
+use rocket::http::{Cookie, CookieJar, Status};
 use diesel::result::{Error, DatabaseErrorInformation};
 
 pub fn get_new_token(user_type: &UserType, duration: i64) -> (Claims, String) {
@@ -14,16 +14,23 @@ pub fn get_new_token(user_type: &UserType, duration: i64) -> (Claims, String) {
     (claims, new_token)
 }
 
-pub fn get_exp_time(claims: Claims) -> chrono::Duration {
-    let exp_datetime = chrono::NaiveDateTime::from_timestamp(claims.exp as i64, 0);
-    let exp_utc_datetime = chrono::DateTime::<chrono::Utc>::from_utc(exp_datetime, chrono::Utc);
-    exp_utc_datetime.signed_duration_since(chrono::Utc::now())
+pub fn get_exp_time(claims: Claims) -> time::Duration {
+    let exp_datetime = time::OffsetDateTime::from_unix_timestamp(claims.exp as i64);
+    let time_now = time::OffsetDateTime::now_utc();
+
+    exp_datetime - time_now
+    // let exp_utc_datetime = time::DateTime::<chrono::Utc>::from_utc(exp_datetime, chrono::Utc);
+    // exp_utc_datetime.signed_duration_since(chrono::Utc::now());
+
+    // let exp_datetime = chrono::NaiveDateTime::from_timestamp(claims.exp as i64, 0);
+    // let exp_utc_datetime = chrono::DateTime::<chrono::Utc>::from_utc(exp_datetime, chrono::Utc);
+    // exp_utc_datetime.signed_duration_since(chrono::Utc::now());
 }
 
-pub fn get_cookie_with_expiry_and_max_age<'a>(exp_time: chrono::Duration, refresh_token: String) -> Cookie<'a> {
+pub fn get_cookie_with_expiry_and_max_age<'a>(exp_time: time::Duration, refresh_token: String) -> Cookie<'a> {
     Cookie::build(COOKIE_REFRESH_TOKEN_NAME, refresh_token)
             .max_age(exp_time)
-            .expires(time::now_utc() + chrono::Duration::seconds(*REFRESH_TOKEN_EXPIRY))
+            .expires(time::OffsetDateTime::now_utc() + time::Duration::seconds(*REFRESH_TOKEN_EXPIRY))
             .finish()
 }
 
@@ -31,7 +38,7 @@ pub fn verify_non_hashed_password(user: User, password: &str) -> Option<bool> {
     bool_as_option(user.verify(password))
 }
 
-pub fn add_refresh_cookie<'a>(user: UserType<'a>, mut cookie: Cookies) -> Option<UserType<'a>> {
+pub fn add_refresh_cookie<'a>(user: UserType<'a>, cookie: &CookieJar) -> Option<UserType<'a>> {
     let (refresh_claims, refresh_token) = get_new_token(&user, *REFRESH_TOKEN_EXPIRY);
     let refresh_exp = get_exp_time(refresh_claims);
     cookie.add_private(get_cookie_with_expiry_and_max_age(refresh_exp, refresh_token));
@@ -41,7 +48,7 @@ pub fn add_refresh_cookie<'a>(user: UserType<'a>, mut cookie: Cookies) -> Option
 pub fn add_token_response<'a>(user: UserType<'a>) -> Option<(TokenResponse, Status)> {
     let (claims, token) = get_new_token(&user, *TOKEN_EXPIRY);
     let token_exp = get_exp_time(claims);
-    Some((TokenResponse::success(JsonStatus::Ok, token, token_exp.num_seconds()), Status::Ok))
+    Some((TokenResponse::success(JsonStatus::Ok, token, token_exp.whole_seconds()), Status::Ok))
 }
 
 pub fn verify_jwt(cookie: &Cookie) -> Option<TokenData<Claims>> {

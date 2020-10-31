@@ -8,13 +8,13 @@ fn authenticates_token_successfully() {
         let client = get_client();
         create_user(&client, "authenticate");
 
-        let mut token_response = client
+        let token_response = client
             .post("/login")
             .header(ContentType::JSON)
             .body(r#"{ "identifier": "authenticate", "password": "Ibrahim123123" }"#)
             .dispatch();
 
-        let access_token = get_access_token(token_response.body_string());
+        let access_token = get_access_token(&token_response.into_string());
 
         let mut request = client
             .get("/authenticate")
@@ -52,7 +52,7 @@ fn does_not_authenticate_token_when_expired() {
         let client = get_client();
         create_user(&client, "expire_auth");
 
-        let mut token_response = client
+        let token_response = client
             .post("/login")
             .header(ContentType::JSON)
             .body(r#"{ "identifier": "expire_auth", "password": "Ibrahim123123" }"#)
@@ -62,7 +62,7 @@ fn does_not_authenticate_token_when_expired() {
             .get("/authenticate")
             .header(ContentType::JSON);
 
-        let token = get_access_token(token_response.body_string());
+        let token = get_access_token(&token_response.into_string());
         request.add_header(Header::new("token", token));
 
         thread::sleep(time::Duration::from_millis(4000));

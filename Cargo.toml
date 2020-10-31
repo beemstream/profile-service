@@ -16,16 +16,18 @@ serde_derive = "1.0"
 lazy_static = "1.4.0"
 r2d2 = "0.8.8"
 r2d2-diesel = "1.0.0"
-rocket = { git = "https://github.com/SergioBenitez/Rocket.git", branch = "master" }
+rocket = { git = "https://github.com/SergioBenitez/Rocket.git", branch = "master", features = ["secrets"] }
 rocket_contrib = { git = "https://github.com/SergioBenitez/Rocket.git", branch = "master", features = ["json"] }
 rocket_codegen = { git = "https://github.com/SergioBenitez/Rocket.git" , branch = "master"}
 bcrypt = "0.6"
 validator = "0.10"
 validator_derive = "0.10"
 jsonwebtoken = "7"
-time = "0.1"
+time = "0.2"
 rocket_cors = { git = "https://github.com/lawliet89/rocket_cors.git", branch = "master" }
 oauth2 = "2.0.0"
 base64 = "0.12.0"
 url = "1.7.2"
 rand = "0.7.3"
+async-trait = "0.1.31"
+futures = "0.3.7"

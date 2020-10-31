@@ -1,4 +1,3 @@
-#![feature(proc_macro_hygiene, decl_macro)]
 #[macro_use] extern crate diesel;
 #[macro_use] extern crate lazy_static;
 #[macro_use] extern crate rocket;
@@ -46,6 +45,7 @@ fn setup_up_cors() -> Result<rocket_cors::Cors, Error> {
     }.to_cors()
 }
 
+#[launch]
 fn get_rocket() -> Rocket {
     dotenv().ok();
     let routes: Vec<Route> = routes![
@@ -59,11 +59,4 @@ fn get_rocket() -> Rocket {
     rocket::ignite()
         .mount("/", routes)
         .attach(setup_up_cors().unwrap())
-}
-
-fn main() -> Result<(), Error> {
-    dotenv().ok();
-    get_rocket()
-        .launch();
-    Ok(())
 }

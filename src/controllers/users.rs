@@ -1,4 +1,4 @@
-use rocket::http::{Status, Cookies};
+use rocket::http::{Status, CookieJar};
 use rocket_contrib::json;
 use crate::{models::user::{NewUser, LoginUser, NewUserRequest, UserType}, repository::user::is_duplicate_user_or_email};
 use crate::repository::user::{insert, find};
@@ -35,7 +35,7 @@ pub fn register_user(user: Json<NewUserRequest>) -> JsonResponse<AuthResponse> {
 }
 
 #[post("/login", format="application/json", data="<user>")]
-pub fn login_user(user: Json<LoginUser>, cookies: Cookies) -> JsonResponse<TokenResponse> {
+pub fn login_user(user: Json<LoginUser>, cookies: &CookieJar) -> JsonResponse<TokenResponse> {
     let user: LoginUser = user.into_inner();
 
     let error_response = || Some((
@@ -53,7 +53,7 @@ pub fn login_user(user: Json<LoginUser>, cookies: Cookies) -> JsonResponse<Token
 }
 
 #[get("/refresh-token")]
-pub fn refresh_token(mut cookie: Cookies, _access_token: AccessToken) -> JsonResponse<TokenResponse> {
+pub fn refresh_token(cookie: &CookieJar, _access_token: AccessToken) -> JsonResponse<TokenResponse> {
     let refresh_token = cookie.get_private(COOKIE_REFRESH_TOKEN_NAME);
 
     let error_response = Some((

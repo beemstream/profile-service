@@ -1,8 +1,8 @@
 use crate::{util::response::{TokenResponse, JsonStatus, JsonResponse}, oauth::twitch_authenticate};
 use serde::{Serialize, Deserialize};
-use rocket::response::Redirect;
+use rocket::{http::CookieJar, response::Redirect};
 use rocket_contrib::json::Json;
-use rocket::http::{Cookie, Cookies, Status};
+use rocket::http::{Cookie, Status};
 use super::oauth_util::get_oauth_response;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -17,7 +17,7 @@ pub fn twitch_auth() -> Redirect {
 }
 
 #[post("/oauth/twitch", format="application/json", data="<twitch_grant>")]
-pub fn twitch_token(twitch_grant: Json<TwitchGrant>, mut cookies: Cookies) -> JsonResponse<TokenResponse> {
+pub fn twitch_token<'a>(twitch_grant: Json<TwitchGrant>, cookies: &CookieJar<'a>) -> JsonResponse<TokenResponse> {
     let response = match get_oauth_response(twitch_grant.code) {
         Ok(response) => {
             let (access_token, refresh_token, expires_in) = response;

@@ -8,7 +8,7 @@ fn refreshes_token_generates_correct_token_successfully() {
         let client = get_client();
         create_user(&client, "refrestokenuser");
 
-        let mut token_response = client
+        let token_response = client
             .post("/login")
             .header(ContentType::JSON)
             .body(r#"{ "identifier": "refrestokenuser", "password": "Ibrahim123123" }"#)
@@ -18,19 +18,20 @@ fn refreshes_token_generates_correct_token_successfully() {
             .get("/refresh-token")
             .header(ContentType::JSON);
 
-        let access_token = get_access_token(token_response.body_string());
+        let access_token = get_access_token(&token_response.into_string());
         let header_token = Header::new("token", access_token);
         request.add_header(header_token);
 
-        let mut response = request.dispatch();
+        let response = request.dispatch();
 
-        let new_access_token = get_access_token(response.body_string());
+        assert_eq!(response.status(), Status::Ok);
+
+        let new_access_token = get_access_token(&response.into_string());
         let authenticated_response = client
             .get("/authenticate")
             .header(Header::new("token", new_access_token))
             .dispatch();
 
-        assert_eq!(response.status(), Status::Ok);
         assert_eq!(authenticated_response.status(), Status::Ok);
     });
 }
@@ -65,14 +66,14 @@ fn does_not_refresh_token_with_expired_token() {
         let client = get_client();
         create_user(&client, "refresh_token_expired");
 
-        let mut token_response = client
+        let token_response = client
             .post("/login")
             .header(ContentType::JSON)
             .body(r#"{ "identifier": "refresh_token_expired", "password": "Ibrahim123123" }"#)
             .dispatch();
 
 
-        let access_token = get_access_token(token_response.body_string());
+        let access_token = get_access_token(&token_response.into_string());
         let mut request = client
             .get("/refresh-token")
             .header(ContentType::JSON);

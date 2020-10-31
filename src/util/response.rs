@@ -87,12 +87,13 @@ impl<T> JsonResponse<T> {
     }
 }
 
-impl<'r, T: serde::Serialize> Responder<'r> for JsonResponse<T> {
-    fn respond_to(self, req: &Request) -> response::Result<'r> {
-        Response::build_from(self.json.respond_to(&req).unwrap())
+impl<'r, T: serde::Serialize> Responder<'r, 'static> for JsonResponse<T> {
+    fn respond_to(self, request: &'r Request<'_>) -> response::Result<'static> {
+        Response::build_from(self.json.respond_to(&request).unwrap())
             .status(self.status)
             .header(ContentType::JSON)
             .ok()
+
     }
 }
 
