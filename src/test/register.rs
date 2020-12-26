@@ -1,5 +1,5 @@
 use super::{get_client, run_test};
-use rocket::http::{Status, ContentType};
+use rocket::http::{ContentType, Status};
 
 #[test]
 fn creates_user_successfully() {
@@ -51,7 +51,13 @@ fn cannot_create_user_with_same_username() {
             .dispatch();
 
         assert_eq!(response.status(), Status::BadRequest);
-        assert_eq!(response.into_string().unwrap().contains("Username already exists."), true);
+        assert_eq!(
+            response
+                .into_string()
+                .unwrap()
+                .contains("Username already exists."),
+            true
+        );
     });
 }
 
@@ -71,7 +77,13 @@ fn cannot_create_user_with_same_email() {
             .dispatch();
 
         assert_eq!(response.status(), Status::BadRequest);
-        assert_eq!(response.into_string().unwrap().contains("Email already exists."), true);
+        assert_eq!(
+            response
+                .into_string()
+                .unwrap()
+                .contains("Email already exists."),
+            true
+        );
     });
 }
 
@@ -86,7 +98,13 @@ fn cannot_create_user_with_not_strong_password() {
             .dispatch();
 
         assert_eq!(response.status(), Status::BadRequest);
-        assert_eq!(response.into_string().unwrap().contains("Password must be 12 characters or more"), true);
+        assert_eq!(
+            response
+                .into_string()
+                .unwrap()
+                .contains("Password must be 12 characters or more"),
+            true
+        );
     });
 }
 
@@ -106,5 +124,3 @@ fn cannot_create_user_with_incorrect_email() {
         assert_eq!(body.contains("Please enter a valid email address."), true);
     });
 }
-
-

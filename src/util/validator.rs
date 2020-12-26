@@ -1,8 +1,7 @@
-use validator::Validate;
 use super::response::FieldError;
+use validator::Validate;
 
 pub trait Validator<T: Validate = Self>: Validate {
-
     fn parsed_field_errors(&self) -> Option<Vec<FieldError>> {
         let mut parsed_errors = vec![];
         match self.validate() {
@@ -23,10 +22,9 @@ pub trait Validator<T: Validate = Self>: Validate {
 
                 match parsed_errors.len() {
                     0 => None,
-                    _ => Some(parsed_errors)
+                    _ => Some(parsed_errors),
                 }
             }
         }
     }
 }
-

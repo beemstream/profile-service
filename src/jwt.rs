@@ -1,4 +1,4 @@
-use jsonwebtoken::{Header, Validation, Algorithm};
+use jsonwebtoken::{Algorithm, Header, Validation};
 
 pub fn generate_header() -> Header {
     Header::new(Algorithm::HS512)

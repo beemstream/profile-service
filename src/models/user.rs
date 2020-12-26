@@ -1,15 +1,16 @@
-use serde::{Serialize, Deserialize};
-use crate::{util::validator::Validator, schema::users};
-use bcrypt::{hash, verify, DEFAULT_COST};
+use crate::util::globals::SECRET_KEY;
+use crate::{schema::users, util::validator::Validator};
+use argonautica::{Hasher, Verifier};
+use serde::{Deserialize, Serialize};
 use validator::Validate;
 
 pub enum UserType<'a> {
     LoginUser(&'a LoginUser<'a>),
-    StoredUser(&'a User)
+    StoredUser(&'a User),
 }
 
 #[derive(Queryable, AsChangeset, Serialize, Deserialize)]
-#[table_name="users"]
+#[table_name = "users"]
 pub struct User {
     pub id: i32,
     pub username: String,
@@ -22,7 +23,14 @@ pub struct User {
 
 impl User {
     pub fn verify(&self, non_hashed: &str) -> bool {
-        verify(&non_hashed, &self.password).unwrap()
+        let mut verifier = Verifier::default();
+        let is_valid = verifier
+            .with_hash(&self.password)
+            .with_password(non_hashed)
+            .with_secret_key(SECRET_KEY.as_str())
+            .verify()
+            .unwrap();
+        is_valid
     }
 }
 
@@ -32,26 +40,31 @@ pub struct NewUserRequest {
     pub email: String,
     #[validate(length(min = 4, message = "Username must be 4 characters or more."))]
     pub username: String,
-    #[ validate(
+    #[validate(
         length(min = 12, message = "Password must be 12 characters or more."),
-        must_match(other = "password_repeat", message = "Password does not match."))
-    ]
+        must_match(other = "password_repeat", message = "Password does not match.")
+    )]
     pub password: String,
-    pub password_repeat: String
+    pub password_repeat: String,
 }
 
 #[derive(Insertable, Deserialize, Serialize)]
-#[table_name="users"]
+#[table_name = "users"]
 pub struct NewUser {
     pub email: String,
     pub username: String,
-    pub password: String
+    pub password: String,
 }
 
 impl NewUser {
     pub fn hash_password(&mut self) -> &mut Self {
-        let hashed = hash(&self.password, DEFAULT_COST).unwrap();
-        self.password = hashed;
+        let mut hasher = Hasher::default();
+        let hash = hasher
+            .with_password(&self.password)
+            .with_secret_key(SECRET_KEY.as_str())
+            .hash()
+            .unwrap();
+        self.password = hash;
         self
     }
 
@@ -59,18 +72,17 @@ impl NewUser {
         Self {
             username: new_user_request.username.to_owned(),
             email: new_user_request.email.to_owned(),
-            password: new_user_request.password.to_owned()
+            password: new_user_request.password.to_owned(),
         }
     }
 }
 
-
-impl Validator for NewUserRequest { }
+impl Validator for NewUserRequest {}
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct LoginUser<'a> {
     pub identifier: &'a str,
-    pub password: &'a str
+    pub password: &'a str,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

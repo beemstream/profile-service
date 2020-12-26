@@ -1,5 +1,5 @@
-use super::{get_access_token, run_test, create_user, get_client};
-use rocket::http::{Header, ContentType, Status};
+use super::{create_user, get_access_token, get_client, run_test};
+use rocket::http::{ContentType, Header, Status};
 use std::{thread, time};
 
 #[test]
@@ -16,9 +16,7 @@ fn authenticates_token_successfully() {
 
         let access_token = get_access_token(&token_response.into_string());
 
-        let mut request = client
-            .get("/authenticate")
-            .header(ContentType::JSON);
+        let mut request = client.get("/authenticate").header(ContentType::JSON);
 
         request.add_header(Header::new("token", access_token));
 
@@ -34,9 +32,7 @@ fn does_not_authenticates_token() {
         let client = get_client();
         create_user(&client, "fail_authenticate");
 
-        let mut request = client
-            .get("/authenticate")
-            .header(ContentType::JSON);
+        let mut request = client.get("/authenticate").header(ContentType::JSON);
 
         request.add_header(Header::new("token", "invalid token"));
 
@@ -58,9 +54,7 @@ fn does_not_authenticate_token_when_expired() {
             .body(r#"{ "identifier": "expire_auth", "password": "Ibrahim123123" }"#)
             .dispatch();
 
-        let mut request = client
-            .get("/authenticate")
-            .header(ContentType::JSON);
+        let mut request = client.get("/authenticate").header(ContentType::JSON);
 
         let token = get_access_token(&token_response.into_string());
         request.add_header(Header::new("token", token));
@@ -72,4 +66,3 @@ fn does_not_authenticate_token_when_expired() {
         assert_eq!(response.status(), Status::Unauthorized);
     });
 }
-

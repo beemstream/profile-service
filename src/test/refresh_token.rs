@@ -1,5 +1,5 @@
-use super::{create_user, run_test, get_access_token, get_client};
-use rocket::http::{Header, ContentType, Status};
+use super::{create_user, get_access_token, get_client, run_test};
+use rocket::http::{ContentType, Header, Status};
 use std::{thread, time};
 
 #[test]
@@ -14,9 +14,7 @@ fn refreshes_token_generates_correct_token_successfully() {
             .body(r#"{ "identifier": "refrestokenuser", "password": "Ibrahim123123" }"#)
             .dispatch();
 
-        let mut request = client
-            .get("/refresh-token")
-            .header(ContentType::JSON);
+        let mut request = client.get("/refresh-token").header(ContentType::JSON);
 
         let access_token = get_access_token(&token_response.into_string());
         let header_token = Header::new("token", access_token);
@@ -45,12 +43,12 @@ fn does_not_refreshes_token_with_invalid_token() {
         client
             .post("/login")
             .header(ContentType::JSON)
-            .body(r#"{ "identifier": "refresh_token_incorrect_token", "password": "Ibrahim123123" }"#)
+            .body(
+                r#"{ "identifier": "refresh_token_incorrect_token", "password": "Ibrahim123123" }"#,
+            )
             .dispatch();
 
-        let mut request = client
-            .get("/refresh-token")
-            .header(ContentType::JSON);
+        let mut request = client.get("/refresh-token").header(ContentType::JSON);
 
         request.add_header(Header::new("token", "incorrect token"));
 
@@ -72,11 +70,8 @@ fn does_not_refresh_token_with_expired_token() {
             .body(r#"{ "identifier": "refresh_token_expired", "password": "Ibrahim123123" }"#)
             .dispatch();
 
-
         let access_token = get_access_token(&token_response.into_string());
-        let mut request = client
-            .get("/refresh-token")
-            .header(ContentType::JSON);
+        let mut request = client.get("/refresh-token").header(ContentType::JSON);
 
         request.add_header(Header::new("token", access_token));
 
@@ -86,4 +81,3 @@ fn does_not_refresh_token_with_expired_token() {
         assert_eq!(response.status(), Status::Unauthorized);
     });
 }
-

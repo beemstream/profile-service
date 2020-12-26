@@ -1,26 +1,16 @@
+use crate::util::globals::{TWITCH_CALLBACK_URL, TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET};
 use oauth2::{
-    RefreshToken,
-    AccessToken,
-    AuthorizationCode,
-    AuthUrl,
-    AuthType,
-    ClientId,
-    ClientSecret,
-    CsrfToken,
-    RedirectUrl,
-    Scope,
-    TokenUrl,
-    ExtraTokenFields,
-    RequestTokenError,
-    TokenType,
-    Client,
-    TokenResponse
+    basic::{BasicErrorResponseType, BasicTokenType},
+    prelude::{NewType, SecretNewType},
 };
-use oauth2::{prelude::{SecretNewType, NewType}, basic::{BasicTokenType, BasicErrorResponseType}};
-use url::Url;
-use serde::{Serialize, Deserialize};
+use oauth2::{
+    AccessToken, AuthType, AuthUrl, AuthorizationCode, Client, ClientId, ClientSecret, CsrfToken,
+    ExtraTokenFields, RedirectUrl, RefreshToken, RequestTokenError, Scope, TokenResponse,
+    TokenType, TokenUrl,
+};
+use serde::{Deserialize, Serialize};
 use std::time::Duration;
-use crate::util::globals::{TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET, TWITCH_CALLBACK_URL};
+use url::Url;
 
 pub fn twitch_authenticate() -> (Url, CsrfToken) {
     let client = twitch_client();
@@ -28,8 +18,7 @@ pub fn twitch_authenticate() -> (Url, CsrfToken) {
 }
 
 pub fn twitch_exchange_code(auth_code: &str) -> OAuthExchangeResult {
-    let client = twitch_client()
-        .set_auth_type(AuthType::RequestBody);
+    let client = twitch_client().set_auth_type(AuthType::RequestBody);
 
     client.exchange_code(AuthorizationCode::new(auth_code.to_string()))
 }
@@ -39,10 +28,12 @@ pub fn twitch_client() -> TwitchOauthClient {
         ClientId::new(TWITCH_CLIENT_ID.to_string()),
         Some(ClientSecret::new(TWITCH_CLIENT_SECRET.to_string())),
         AuthUrl::new(Url::parse("https://id.twitch.tv/oauth2/authorize").unwrap()),
-        Some(TokenUrl::new(Url::parse("https://id.twitch.tv/oauth2/token").unwrap()))
-        )
-        .add_scope(Scope::new("openid user:read:email".to_string()))
-        .set_redirect_url(RedirectUrl::new(Url::parse(&TWITCH_CALLBACK_URL).unwrap()));
+        Some(TokenUrl::new(
+            Url::parse("https://id.twitch.tv/oauth2/token").unwrap(),
+        )),
+    )
+    .add_scope(Scope::new("openid user:read:email".to_string()))
+    .set_redirect_url(RedirectUrl::new(Url::parse(&TWITCH_CALLBACK_URL).unwrap()));
 
     client
 }
@@ -53,11 +44,15 @@ pub type ExchangeSuccess = TwitchTokenResponse<TwitchFields, BasicTokenType>;
 
 pub type ExchangeError = RequestTokenError<BasicErrorResponseType>;
 
-pub type TwitchOauthClient = Client<BasicErrorResponseType, TwitchTokenResponse<TwitchFields, BasicTokenType>, BasicTokenType>;
+pub type TwitchOauthClient = Client<
+    BasicErrorResponseType,
+    TwitchTokenResponse<TwitchFields, BasicTokenType>,
+    BasicTokenType,
+>;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct TwitchFields {
-    id_token: String
+    id_token: String,
 }
 
 impl ExtraTokenFields for TwitchFields {}
@@ -107,4 +102,3 @@ where
         self.scopes.as_ref()
     }
 }
-

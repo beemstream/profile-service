@@ -19,7 +19,6 @@ r2d2-diesel = "1.0.0"
 rocket = { git = "https://github.com/SergioBenitez/Rocket.git", branch = "master", features = ["secrets"] }
 rocket_contrib = { git = "https://github.com/SergioBenitez/Rocket.git", branch = "master", features = ["json"] }
 rocket_codegen = { git = "https://github.com/SergioBenitez/Rocket.git" , branch = "master"}
-bcrypt = "0.6"
 validator = "0.10"
 validator_derive = "0.10"
 jsonwebtoken = "7"
@@ -31,3 +30,4 @@ url = "1.7.2"
 rand = "0.7.3"
 async-trait = "0.1.31"
 futures = "0.3.7"
+argonautica = { version = "0.2.0" }

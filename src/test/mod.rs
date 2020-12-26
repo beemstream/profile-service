@@ -1,34 +1,36 @@
-use diesel::prelude::*;
-use crate::schema::users;
 use crate::database::get_pooled_connection;
-use std::panic;
+use crate::schema::users;
+use diesel::prelude::*;
+use rocket::{
+    http::{ContentType, Status},
+    local::blocking::{Client, LocalResponse},
+};
 use serde_json::{json, Value};
-use rocket::{http::{Status, ContentType}, local::blocking::{Client, LocalResponse}};
+use std::panic;
 
-mod register;
-mod login;
 mod authenticate;
+mod login;
 mod refresh_token;
+mod register;
 
 // lazy_static!{
 //     pub static ref ROCKET_CLIENT: Client = Client::tracked(crate::get_rocket()).expect("valid rocket instance");
 // }
 
 pub fn run_test<T>(test: T) -> ()
-    where T: FnOnce() -> () + panic::UnwindSafe
-    {
-        // let is_ok = setup().is_ok();
+where
+    T: FnOnce() -> () + panic::UnwindSafe,
+{
+    // let is_ok = setup().is_ok();
 
-        // if is_ok {
-        let result = panic::catch_unwind(|| {
-            test()
-        });
+    // if is_ok {
+    let result = panic::catch_unwind(|| test());
 
-        assert!(result.is_ok())
-            // } else {
-            //     println!("Failed setup");
-            // }
-    }
+    assert!(result.is_ok())
+    // } else {
+    //     println!("Failed setup");
+    // }
+}
 
 fn setup() -> std::result::Result<usize, diesel::result::Error> {
     diesel::delete(users::table).execute(&*get_pooled_connection())
@@ -59,7 +61,6 @@ pub fn create_user<'a>(client: &'a Client, username: &str) -> LocalResponse<'a> 
 }
 
 pub fn clean_up_user<'a>(client: &'a Client, username: &str) -> LocalResponse<'a> {
-
     let json = json!({
         "username": username,
         "email": format!("{}{}", username, "@gmail.com"),

@@ -1,5 +1,5 @@
-use super::{create_user, run_test, get_client};
-use rocket::http::{Status, ContentType};
+use super::{create_user, get_client, run_test};
+use rocket::http::{ContentType, Status};
 
 #[test]
 fn login_user_successfully_with_username() {
@@ -59,7 +59,10 @@ fn fails_login_username_with_wrong_password() {
         let body = response.into_string().unwrap();
 
         assert_eq!(body.contains("not ok"), true);
-        assert_eq!(body.contains("Username/email or password is incorrect."), true);
+        assert_eq!(
+            body.contains("Username/email or password is incorrect."),
+            true
+        );
     });
 }
 
@@ -80,7 +83,9 @@ fn fails_login_email_with_wrong_password() {
         let body = response.into_string().unwrap();
 
         assert_eq!(body.contains("not ok"), true);
-        assert_eq!(body.contains("Username/email or password is incorrect."), true);
+        assert_eq!(
+            body.contains("Username/email or password is incorrect."),
+            true
+        );
     });
 }
-

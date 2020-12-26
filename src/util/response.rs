@@ -1,8 +1,8 @@
-use rocket_contrib::json::Json;
-use rocket::response::{self, Responder, Response};
-use rocket::http::{Status, ContentType};
+use rocket::http::{ContentType, Status};
 use rocket::request::Request;
-use serde::{Serialize, Deserialize};
+use rocket::response::{self, Responder, Response};
+use rocket_contrib::json::Json;
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize)]
 pub enum JsonStatus {
@@ -11,7 +11,7 @@ pub enum JsonStatus {
     #[serde(rename(serialize = "not ok"))]
     NotOk,
     #[serde(rename(serialize = "error"))]
-    Error
+    Error,
 }
 
 #[derive(Serialize)]
@@ -20,21 +20,18 @@ pub enum StatusReason {
     FieldErrors,
     #[serde(rename(serialize = "SERVER_ERROR"))]
     ServerError,
-    Other(String)
+    Other(String),
 }
 
 #[derive(Serialize)]
 pub struct FieldError {
     name: String,
-    message: Vec<String>
+    message: Vec<String>,
 }
 
 impl FieldError {
     pub fn new(name: String, message: Vec<String>) -> Self {
-        Self {
-            name,
-            message
-        }
+        Self { name, message }
     }
 }
 
@@ -44,7 +41,7 @@ pub struct AuthResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     reason: Option<StatusReason>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    fields: Option<Vec<FieldError>>
+    fields: Option<Vec<FieldError>>,
 }
 
 impl AuthResponse {
@@ -52,7 +49,7 @@ impl AuthResponse {
         Self {
             status: JsonStatus::Ok,
             reason: None,
-            fields: None
+            fields: None,
         }
     }
 
@@ -60,7 +57,7 @@ impl AuthResponse {
         Self {
             status: JsonStatus::NotOk,
             reason: Some(reason),
-            fields: Some(fields)
+            fields: Some(fields),
         }
     }
 
@@ -68,7 +65,7 @@ impl AuthResponse {
         Self {
             status: JsonStatus::Error,
             reason: Some(reason),
-            fields: None
+            fields: None,
         }
     }
 }
@@ -82,7 +79,7 @@ impl<T> JsonResponse<T> {
     pub fn new(json: T, status: Status) -> JsonResponse<T> {
         JsonResponse {
             json: Json(json),
-            status
+            status,
         }
     }
 }
@@ -93,7 +90,6 @@ impl<'r, T: serde::Serialize> Responder<'r, 'static> for JsonResponse<T> {
             .status(self.status)
             .header(ContentType::JSON)
             .ok()
-
     }
 }
 
@@ -105,7 +101,7 @@ pub struct TokenResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     expires_in: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    reason: Option<String>
+    reason: Option<String>,
 }
 
 impl TokenResponse {
@@ -114,7 +110,7 @@ impl TokenResponse {
             status,
             access_token: Some(access_token),
             expires_in: Some(expires_in),
-            reason: None
+            reason: None,
         }
     }
 
@@ -123,7 +119,7 @@ impl TokenResponse {
             status,
             reason: Some(reason),
             expires_in: None,
-            access_token: None
+            access_token: None,
         }
     }
 }
@@ -131,5 +127,5 @@ impl TokenResponse {
 #[derive(Deserialize)]
 pub struct TokenRequest<'a> {
     #[allow(dead_code)]
-    access_token: &'a str
+    access_token: &'a str,
 }
