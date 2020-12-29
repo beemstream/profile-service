@@ -1,7 +1,4 @@
-use crate::{
-    jwt::generate_header,
-    models::user::{Claims, User, UserType},
-};
+use crate::{database::DbConn, jwt::generate_header, models::user::{Claims, User, UserType}};
 use crate::{
     repository::user::find,
     util::{
@@ -11,13 +8,13 @@ use crate::{
         response::{AuthResponse, FieldError, JsonStatus, StatusReason, TokenResponse},
     },
 };
-use diesel::result::{DatabaseErrorInformation, Error};
+use rocket_contrib::databases::diesel::result::{DatabaseErrorInformation, Error};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, TokenData};
 use rocket::http::{Cookie, CookieJar, Status};
 
 pub fn get_new_token(user_type: &UserType, duration: i64) -> (Claims, String) {
     let claims = match user_type {
-        UserType::LoginUser(u) => Claims::new(u.identifier, duration),
+        UserType::LoginUser(u) => Claims::new(u.identifier.as_ref(), duration),
         UserType::StoredUser(u) => Claims::new(&u.username, duration),
     };
     let encode_key = EncodingKey::from_secret(&SECRET_KEY.as_ref());
@@ -72,8 +69,8 @@ pub fn verify_jwt(cookie: &Cookie) -> Option<TokenData<Claims>> {
     decode::<Claims>(cookie.value(), &decode_key, &VALIDATION).ok()
 }
 
-pub fn verify_username(token_data: TokenData<Claims>) -> Option<User> {
-    find(token_data.claims.sub()).ok()
+pub async fn verify_username(conn: &DbConn, token_data: TokenData<Claims>) -> Option<User> {
+    find(&conn, token_data.claims.sub().to_owned()).await.ok()
 }
 
 pub fn bool_as_option(is_verified: bool) -> Option<bool> {

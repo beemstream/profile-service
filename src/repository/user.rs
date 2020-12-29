@@ -1,9 +1,9 @@
-use crate::database::get_pooled_connection;
+use crate::database::DbConn;
 use crate::models::user::{NewUser, NewUserRequest, User};
 use crate::schema::users;
-use diesel::prelude::*;
-use diesel::result::DatabaseErrorKind::UniqueViolation;
-use diesel::result::Error::DatabaseError;
+use rocket_contrib::databases::diesel::{self, prelude::*};
+use rocket_contrib::databases::diesel::result::DatabaseErrorKind::UniqueViolation;
+use rocket_contrib::databases::diesel::result::Error::DatabaseError;
 
 struct RegisterError<'a> {
     column_name: &'a str,
@@ -54,33 +54,37 @@ pub fn get_by_email(email: &String, conn: &PgConnection) -> QueryResult<i32> {
         .get_result::<i32>(conn)
 }
 
-pub fn is_duplicate_user_or_email(
-    user: &NewUserRequest,
-) -> Result<&NewUserRequest, diesel::result::Error> {
-    let conn = &*get_pooled_connection();
-    let found_username = get_by_username(&user.username, conn);
-    let found_email = get_by_email(&user.email, conn);
+pub async fn is_duplicate_user_or_email(
+    conn: &DbConn,
+    user: NewUserRequest,
+) -> Result<NewUserRequest, diesel::result::Error> {
+    conn.run(|c| {
+        let found_username = get_by_username(&user.username, c);
+        let found_email = get_by_email(&user.email, c);
 
-    let is_found_by_username = has_found_user(found_username);
-    let is_found_by_email = has_found_user(found_email);
+        let is_found_by_username = has_found_user(found_username);
+        let is_found_by_email = has_found_user(found_email);
 
-    if is_found_by_username {
-        Err(DatabaseError(
-            UniqueViolation,
-            RegisterError::new("username", "Username already exists."),
-        ))
-    } else if is_found_by_email {
-        Err(DatabaseError(
-            UniqueViolation,
-            RegisterError::new("email", "Email already exists."),
-        ))
-    } else {
-        Ok(user)
-    }
+        if is_found_by_username {
+            Err(DatabaseError(
+                UniqueViolation,
+                RegisterError::new("username", "Username already exists."),
+            ))
+        } else if is_found_by_email {
+            Err(DatabaseError(
+                UniqueViolation,
+                RegisterError::new("email", "Email already exists."),
+            ))
+        } else {
+            Ok(user)
+        }
+    })
+    .await
 }
 
-pub fn insert(user: &NewUser) -> Result<usize, diesel::result::Error> {
-    let conn = &*get_pooled_connection();
+pub async fn insert(conn: &DbConn, user: NewUser) -> Result<usize, diesel::result::Error> {
+    conn.run(|c| diesel::insert_into(users::table).values(user).execute(c))
+        .await
     // let found_username = get_by_username(&user.username, conn);
     // let found_email = get_by_email(&user.email, conn);
 
@@ -92,33 +96,36 @@ pub fn insert(user: &NewUser) -> Result<usize, diesel::result::Error> {
     // } else if is_found_by_email {
     //     Err(DatabaseError(UniqueViolation, RegisterError::new("email", "Email already exists.")))
     // } else {
-    diesel::insert_into(users::table).values(user).execute(conn)
     // }
 }
 
-pub fn find(identifier: &str) -> Result<User, diesel::result::Error> {
-    let conn = &*get_pooled_connection();
-
-    users::table
-        .filter(users::email.eq(identifier))
-        .or_filter(users::username.eq(identifier))
-        .get_result::<User>(conn)
+pub async fn find(conn: &DbConn, identifier: String) -> Result<User, diesel::result::Error> {
+    conn.run(move |c| {
+        users::table
+            .filter(users::email.eq(&identifier))
+            .or_filter(users::username.eq(&identifier))
+            .get_result::<User>(c)
+    }).await
 }
 
-pub fn update(id: i32, user: User) -> QueryResult<User> {
-    let conn = &*get_pooled_connection();
-    diesel::update(users::table.find(id))
-        .set(&user)
-        .get_result(conn)
+pub async fn update(conn: &DbConn, id: i32, user: User) -> QueryResult<User> {
+    conn.run(move |c| {
+
+        diesel::update(users::table.find(id))
+            .set(&user)
+            .get_result(c)
+    }).await
 }
 
-pub fn delete(id: i32, mut user: User) -> QueryResult<User> {
-    let conn = &*get_pooled_connection();
+pub async fn delete(conn: &DbConn, id: i32, mut user: User) -> QueryResult<User> {
+    conn.run(move |c| {
+
     user.is_deleted = true;
 
     diesel::update(users::table.find(id))
         .set(user)
-        .get_result(conn)
+        .get_result(c)
+    }).await
 }
 
 pub fn has_found_user(user: QueryResult<i32>) -> bool {

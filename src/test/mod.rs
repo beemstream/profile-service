@@ -1,12 +1,12 @@
-use crate::database::get_pooled_connection;
 use crate::schema::users;
 use diesel::prelude::*;
 use rocket::{
     http::{ContentType, Status},
     local::blocking::{Client, LocalResponse},
+    local::asynchronous::{Client as ClientAsync},
 };
 use serde_json::{json, Value};
-use std::panic;
+use std::{panic, sync::{Mutex, MutexGuard, Once}};
 
 mod authenticate;
 mod login;
@@ -30,10 +30,6 @@ where
     // } else {
     //     println!("Failed setup");
     // }
-}
-
-fn setup() -> std::result::Result<usize, diesel::result::Error> {
-    diesel::delete(users::table).execute(&*get_pooled_connection())
 }
 
 pub fn get_access_token(body_string: &Option<String>) -> String {
@@ -79,7 +75,16 @@ pub fn clean_up_user<'a>(client: &'a Client, username: &str) -> LocalResponse<'a
     response
 }
 
-pub fn get_client() -> Client {
-    let c = Client::tracked(crate::get_rocket()).expect("valid rocket instance");
-    c
+static INIT: Once = Once::new();
+
+lazy_static! {
+    pub static ref c: Mutex<Client> = Mutex::new(Client::tracked(crate::get_rocket()).expect("valid rocket instance"));
+}
+
+pub fn get_client<'a>() -> MutexGuard<'a, Client> {
+    // INIT.call_once(|| {
+    //     Client::tracked(crate::get_rocket()).expect("valid rocket instance");
+    // });
+    // Client::tracked(crate::get_rocket()).expect("valid rocket instance")
+    c.lock().unwrap()
 }

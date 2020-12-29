@@ -2,11 +2,6 @@ use crate::jwt::jwt_validation;
 use jsonwebtoken::Validation;
 
 lazy_static! {
-    pub static ref DATABASE_URL: String =
-        std::env::var("DATABASE_URL").expect("TWITCH_CLIENT_SECRET must be set");
-}
-
-lazy_static! {
     pub static ref SECRET_KEY: String = std::env::var("ROCKET_SECRET_KEY")
         .expect("ROCKET_SECRET_KEY must be set")
         .to_string();

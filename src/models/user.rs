@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use validator::Validate;
 
 pub enum UserType<'a> {
-    LoginUser(&'a LoginUser<'a>),
+    LoginUser(&'a LoginUser),
     StoredUser(&'a User),
 }
 
@@ -68,7 +68,7 @@ impl NewUser {
         self
     }
 
-    pub fn from(new_user_request: &NewUserRequest) -> Self {
+    pub fn from(new_user_request: NewUserRequest) -> Self {
         Self {
             username: new_user_request.username.to_owned(),
             email: new_user_request.email.to_owned(),
@@ -80,9 +80,9 @@ impl NewUser {
 impl Validator for NewUserRequest {}
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct LoginUser<'a> {
-    pub identifier: &'a str,
-    pub password: &'a str,
+pub struct LoginUser {
+    pub identifier: String,
+    pub password: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
