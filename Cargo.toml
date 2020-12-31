@@ -27,6 +27,6 @@ base64 = "0.12.0"
 url = "1.7.2"
 rand = "0.7.3"
 async-trait = "0.1.31"
-futures = "0.3.7"
-argonautica = { version = "0.2.0" }
+futures = { version = "0.3.7", features = ["thread-pool"] }
 postgres = { version = "0.15", features = ["with-chrono"]  }
+rust-argon2 = "0.8"

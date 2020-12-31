@@ -19,14 +19,14 @@ use crate::{
 };
 use futures::TryFutureExt;
 use json::Json;
-use rocket::{http::{CookieJar, Status}, tokio::time::Instant};
+use rocket::{
+    http::{CookieJar, Status},
+    tokio::time::Instant,
+};
 use rocket_contrib::json;
 
 #[post("/register", format = "application/json", data = "<user>")]
-pub async fn register_user(
-    conn: DbConn,
-    user: Json<NewUserRequest>,
-) -> Result<JsonResponse<AuthResponse>, JsonResponse<AuthResponse>> {
+pub async fn register_user(conn: DbConn, user: Json<NewUserRequest>) -> JsonResponse<AuthResponse> {
     let user_request = user.into_inner();
     let validation_errors = user_request.parsed_field_errors();
 
@@ -36,7 +36,10 @@ pub async fn register_user(
     let saved_user = is_duplicate_user_or_email(&conn, user_request)
         .and_then(|user| {
             let mut new_user = NewUser::from(user);
+            let before = Instant::now();
             new_user.hash_password();
+            let after = Instant::now() - before;
+            println!("hashing took {:?}", after);
             insert(&conn, new_user)
         })
         .await
@@ -47,12 +50,15 @@ pub async fn register_user(
         .or_else(|| get_success_json_response())
         .unwrap();
 
-    // let (auth_response, status) = respond_with_validation_errors.or_else(|| get_success_json_response()).unwrap();
-    Ok(JsonResponse::new(auth_response, status))
+    JsonResponse::new(auth_response, status)
 }
 
 #[post("/login", format = "application/json", data = "<user>")]
-pub async fn login_user<'a>(conn: DbConn, user: Json<LoginUser>, cookies: &CookieJar<'a>) -> JsonResponse<TokenResponse> {
+pub async fn login_user<'a>(
+    conn: DbConn,
+    user: Json<LoginUser>,
+    cookies: &CookieJar<'a>,
+) -> JsonResponse<TokenResponse> {
     let user: LoginUser = user.into_inner();
 
     let error_response = || {
@@ -95,10 +101,7 @@ pub async fn refresh_token<'a>(
         Status::Unauthorized,
     ));
 
-    let token_data = refresh_token
-        .as_ref()
-        .and_then(|t| verify_jwt(t))
-        .unwrap();
+    let token_data = refresh_token.as_ref().and_then(|t| verify_jwt(t)).unwrap();
 
     let token_response = verify_username(&conn, token_data)
         .await

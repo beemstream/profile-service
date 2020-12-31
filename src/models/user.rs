@@ -1,6 +1,7 @@
 use crate::util::globals::SECRET_KEY;
 use crate::{schema::users, util::validator::Validator};
-use argonautica::{Hasher, Verifier};
+use argon2::{self, hash_encoded, verify_encoded_ext, Config};
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
@@ -23,14 +24,13 @@ pub struct User {
 
 impl User {
     pub fn verify(&self, non_hashed: &str) -> bool {
-        let mut verifier = Verifier::default();
-        let is_valid = verifier
-            .with_hash(&self.password)
-            .with_password(non_hashed)
-            .with_secret_key(SECRET_KEY.as_str())
-            .verify()
-            .unwrap();
-        is_valid
+        verify_encoded_ext(
+            &self.password,
+            non_hashed.as_bytes(),
+            SECRET_KEY.as_bytes(),
+            &[],
+        )
+        .unwrap()
     }
 }
 
@@ -58,12 +58,12 @@ pub struct NewUser {
 
 impl NewUser {
     pub fn hash_password(&mut self) -> &mut Self {
-        let mut hasher = Hasher::default();
-        let hash = hasher
-            .with_password(&self.password)
-            .with_secret_key(SECRET_KEY.as_str())
-            .hash()
-            .unwrap();
+        let config = Config {
+            secret: SECRET_KEY.as_bytes(),
+            ..Config::default()
+        };
+        let salt = rand::thread_rng().gen::<[u8; 32]>();
+        let hash = hash_encoded(self.password.as_bytes(), &salt, &config).unwrap();
         self.password = hash;
         self
     }

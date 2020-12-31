@@ -1,4 +1,7 @@
-use crate::{database::DbConn, jwt::jwt_validation, models::user::Claims, repository::user::find, util::globals::SECRET_KEY};
+use crate::{
+    database::DbConn, jwt::jwt_validation, models::user::Claims, repository::user::find,
+    util::globals::SECRET_KEY,
+};
 use jsonwebtoken::{decode, DecodingKey};
 use rocket::{
     http::Status,
@@ -33,7 +36,6 @@ impl<'a, 'r> FromRequest<'a, 'r> for AccessToken {
         match keys.len() {
             0 => Outcome::Failure((Status::Unauthorized, AccessTokenError::Missing)),
             1 if is_token_valid(&db_conn, keys[0]).await => Outcome::Success(AccessToken(keys[0].to_string())),
-            1 => Outcome::Failure((Status::Unauthorized, AccessTokenError::Invalid)),
             _ => Outcome::Failure((Status::Unauthorized, AccessTokenError::Invalid)),
         }
     }

@@ -1,4 +1,8 @@
-use crate::{database::DbConn, jwt::generate_header, models::user::{Claims, User, UserType}};
+use crate::{
+    database::DbConn,
+    jwt::generate_header,
+    models::user::{Claims, User, UserType},
+};
 use crate::{
     repository::user::find,
     util::{
@@ -8,9 +12,9 @@ use crate::{
         response::{AuthResponse, FieldError, JsonStatus, StatusReason, TokenResponse},
     },
 };
-use rocket_contrib::databases::diesel::result::{DatabaseErrorInformation, Error};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, TokenData};
 use rocket::http::{Cookie, CookieJar, Status};
+use rocket_contrib::databases::diesel::result::{DatabaseErrorInformation, Error};
 
 pub fn get_new_token(user_type: &UserType, duration: i64) -> (Claims, String) {
     let claims = match user_type {

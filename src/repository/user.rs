@@ -1,9 +1,9 @@
 use crate::database::DbConn;
 use crate::models::user::{NewUser, NewUserRequest, User};
 use crate::schema::users;
-use rocket_contrib::databases::diesel::{self, prelude::*};
 use rocket_contrib::databases::diesel::result::DatabaseErrorKind::UniqueViolation;
 use rocket_contrib::databases::diesel::result::Error::DatabaseError;
+use rocket_contrib::databases::diesel::{self, prelude::*};
 
 struct RegisterError<'a> {
     column_name: &'a str,
@@ -105,27 +105,28 @@ pub async fn find(conn: &DbConn, identifier: String) -> Result<User, diesel::res
             .filter(users::email.eq(&identifier))
             .or_filter(users::username.eq(&identifier))
             .get_result::<User>(c)
-    }).await
+    })
+    .await
 }
 
 pub async fn update(conn: &DbConn, id: i32, user: User) -> QueryResult<User> {
     conn.run(move |c| {
-
         diesel::update(users::table.find(id))
             .set(&user)
             .get_result(c)
-    }).await
+    })
+    .await
 }
 
 pub async fn delete(conn: &DbConn, id: i32, mut user: User) -> QueryResult<User> {
     conn.run(move |c| {
+        user.is_deleted = true;
 
-    user.is_deleted = true;
-
-    diesel::update(users::table.find(id))
-        .set(user)
-        .get_result(c)
-    }).await
+        diesel::update(users::table.find(id))
+            .set(user)
+            .get_result(c)
+    })
+    .await
 }
 
 pub fn has_found_user(user: QueryResult<i32>) -> bool {
