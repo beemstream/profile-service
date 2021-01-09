@@ -122,13 +122,10 @@ pub async fn refresh_token<'a>(
         Status::Unauthorized,
     ));
 
-    let token_data = match refresh_token.as_ref().and_then(|t| {
-        verify_jwt(
-            t,
-            &global_config.auth_secret_key,
-            &jwt_config.validation,
-        )
-    }) {
+    let token_data = match refresh_token
+        .as_ref()
+        .and_then(|t| verify_jwt(t, &global_config.auth_secret_key, &jwt_config.validation))
+    {
         None => {
             let (r, s) = error_response.unwrap();
             return JsonResponse::new(r, s);

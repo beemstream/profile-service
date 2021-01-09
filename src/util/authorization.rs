@@ -1,7 +1,4 @@
-use crate::{
-    database::DbConn,
-    models::user::Claims, repository::user::find,
-};
+use crate::{database::DbConn, models::user::Claims, repository::user::find};
 use jsonwebtoken::{decode, DecodingKey, Validation};
 use rocket::{
     http::Status,
@@ -25,9 +22,16 @@ pub async fn is_token_valid(
     validation: &Validation,
 ) -> bool {
     let decode_key = DecodingKey::from_secret(secret_key.as_ref());
-    match decode::<Claims>(token, &decode_key, validation) {
-        Ok(t) => find(conn, t.claims.sub().to_owned()).await.is_ok(),
-        Err(_) => false,
+    let request_token: Vec<&str> = token.split(" ").collect();
+    match request_token.len() {
+        2 => {
+            request_token[0] == "Bearer"
+                && match decode::<Claims>(request_token[1], &decode_key, validation) {
+                    Ok(t) => find(conn, t.claims.sub().to_owned()).await.is_ok(),
+                    Err(_) => false,
+                }
+        }
+        _ => false,
     }
 }
 

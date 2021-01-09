@@ -17,7 +17,7 @@ fn refreshes_token_generates_correct_token_successfully() {
         let mut request = client.get("/refresh-token").header(ContentType::JSON);
 
         let access_token = get_access_token(&token_response.into_string());
-        let header_token = Header::new("token", access_token);
+        let header_token = Header::new("token", format!("Bearer {}", access_token));
         request.add_header(header_token);
 
         let response = request.dispatch();
@@ -27,7 +27,7 @@ fn refreshes_token_generates_correct_token_successfully() {
         let new_access_token = get_access_token(&response.into_string());
         let authenticated_response = client
             .get("/authenticate")
-            .header(Header::new("token", new_access_token))
+            .header(Header::new("token", format!("Bearer {}", new_access_token)))
             .dispatch();
 
         assert_eq!(authenticated_response.status(), Status::Ok);
@@ -73,7 +73,7 @@ fn does_not_refresh_token_with_expired_token() {
         let access_token = get_access_token(&token_response.into_string());
         let mut request = client.get("/refresh-token").header(ContentType::JSON);
 
-        request.add_header(Header::new("token", access_token));
+        request.add_header(Header::new("token", format!("Bearer {}", access_token)));
 
         thread::sleep(time::Duration::from_millis(4000));
         let response = request.dispatch();

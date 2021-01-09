@@ -18,7 +18,7 @@ fn authenticates_token_successfully() {
 
         let mut request = client.get("/authenticate").header(ContentType::JSON);
 
-        request.add_header(Header::new("token", access_token));
+        request.add_header(Header::new("token", format!("Bearer {}", access_token)));
 
         let response = request.dispatch();
 
