@@ -2,21 +2,14 @@
 extern crate diesel;
 #[macro_use]
 extern crate rocket;
-#[macro_use]
-extern crate validator_derive;
 extern crate futures;
 extern crate serde;
-extern crate serde_json;
 extern crate validator;
 #[macro_use]
 extern crate rocket_contrib;
 extern crate argon2;
-extern crate base64;
 extern crate chrono;
 extern crate oauth2;
-extern crate rand;
-extern crate time;
-extern crate url;
 
 mod controllers;
 mod database;
@@ -68,7 +61,6 @@ fn get_rocket() -> Rocket {
 
     let global_config: GlobalConfig = figment.extract().expect("global config");
     let twitch_config: TwitchConfig = figment.extract().expect("twitch config");
-
     let jwt = JWTConfig {
         validation: jwt_validation(),
     };
