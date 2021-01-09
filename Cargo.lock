@@ -2415,7 +2415,7 @@ dependencies = [
 [[package]]
 name = "rocket_cors"
 version = "0.5.2"
-source = "git+https://github.com/lawliet89/rocket_cors.git?branch=master#8427e625212dd0ecbd9a24df8229e1ba0c3d6f4b"
+source = "git+https://github.com/lawliet89/rocket_cors.git?branch=master#305971023d0edf29d10bf5af1d385481b0b5245f"
 dependencies = [
  "log",
  "regex",

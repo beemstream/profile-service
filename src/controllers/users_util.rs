@@ -11,10 +11,7 @@ use crate::{
     },
 };
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, TokenData, Validation};
-use rocket::{
-    config::SecretKey,
-    http::{Cookie, CookieJar, Status},
-};
+use rocket::http::{Cookie, CookieJar, Status};
 use rocket_contrib::databases::diesel::result::{DatabaseErrorInformation, Error};
 
 pub fn get_new_token(user_type: &UserType, duration: i64, secret_key: &String) -> (Claims, String) {

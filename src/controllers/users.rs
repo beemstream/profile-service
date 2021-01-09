@@ -3,19 +3,16 @@ use super::users_util::{
     get_validation_errors_response, update_refresh_token_cache, verify_jwt,
     verify_non_hashed_password, verify_username,
 };
+use crate::util::{
+    authorization::AccessToken,
+    globals::COOKIE_REFRESH_TOKEN_NAME,
+    response::{AuthResponse, JsonResponse, JsonStatus, TokenResponse},
+    validator::Validator,
+};
 use crate::{
     database::DbConn,
     repository::user::{find, insert},
     util::globals::{GlobalConfig, JWTConfig},
-};
-use crate::{
-    email_sender::send_email,
-    util::{
-        authorization::AccessToken,
-        globals::COOKIE_REFRESH_TOKEN_NAME,
-        response::{AuthResponse, JsonResponse, JsonStatus, TokenResponse},
-        validator::Validator,
-    },
 };
 use crate::{
     models::user::{LoginUser, NewUser, NewUserRequest, UserType},

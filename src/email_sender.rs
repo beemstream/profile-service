@@ -1,12 +1,6 @@
-use std::time::Duration;
-
 use lettre::{
-    transport::smtp::{
-        authentication::{Credentials, Mechanism},
-        client::{Tls, TlsParameters},
-        PoolConfig,
-    },
-    AsyncSmtpTransport, Message, SmtpTransport, Tokio02Connector, Tokio02Transport, Transport,
+    transport::smtp::authentication::{Credentials, Mechanism},
+    AsyncSmtpTransport, Message, Tokio02Connector, Tokio02Transport,
 };
 
 pub async fn send_email(to: &str) {
@@ -16,9 +10,7 @@ pub async fn send_email(to: &str) {
                 .parse()
                 .unwrap(),
         )
-        .to("Ibrahim Mahmood <ibrahimpictureone@gmail.com>"
-            .parse()
-            .unwrap())
+        .to(to.parse().unwrap())
         .subject("Happy new year")
         .body("Be happy!")
         .unwrap();
