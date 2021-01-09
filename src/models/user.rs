@@ -1,4 +1,3 @@
-use crate::util::globals::SECRET_KEY;
 use crate::{schema::users, util::validator::Validator};
 use argon2::{self, hash_encoded, verify_encoded_ext, Config};
 use rand::Rng;
@@ -23,11 +22,11 @@ pub struct User {
 }
 
 impl User {
-    pub fn verify(&self, non_hashed: &str) -> bool {
+    pub fn verify(&self, non_hashed: &str, secret_key: &String) -> bool {
         verify_encoded_ext(
             &self.password,
             non_hashed.as_bytes(),
-            SECRET_KEY.as_bytes(),
+            secret_key.as_bytes(),
             &[],
         )
         .unwrap()
@@ -57,9 +56,9 @@ pub struct NewUser {
 }
 
 impl NewUser {
-    pub fn hash_password(&mut self) -> &mut Self {
+    pub fn hash_password(&mut self, secret_key: &String) -> &mut Self {
         let config = Config {
-            secret: SECRET_KEY.as_bytes(),
+            secret: secret_key.as_bytes(),
             ..Config::default()
         };
         let salt = rand::thread_rng().gen::<[u8; 32]>();

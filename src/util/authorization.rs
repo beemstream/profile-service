@@ -1,12 +1,14 @@
 use crate::{
-    database::DbConn, jwt::jwt_validation, models::user::Claims, repository::user::find,
-    util::globals::SECRET_KEY,
+    database::DbConn,
+    models::user::Claims, repository::user::find,
 };
-use jsonwebtoken::{decode, DecodingKey};
+use jsonwebtoken::{decode, DecodingKey, Validation};
 use rocket::{
     http::Status,
     request::{FromRequest, Outcome},
 };
+
+use super::globals::{GlobalConfig, JWTConfig};
 
 pub struct AccessToken(String);
 
@@ -16,9 +18,14 @@ pub enum AccessTokenError {
     Invalid,
 }
 
-pub async fn is_token_valid(conn: &DbConn, token: &str) -> bool {
-    let decode_key = DecodingKey::from_secret(&SECRET_KEY.as_ref());
-    match decode::<Claims>(token, &decode_key, &jwt_validation()) {
+pub async fn is_token_valid(
+    conn: &DbConn,
+    token: &str,
+    secret_key: &String,
+    validation: &Validation,
+) -> bool {
+    let decode_key = DecodingKey::from_secret(secret_key.as_ref());
+    match decode::<Claims>(token, &decode_key, validation) {
         Ok(t) => find(conn, t.claims.sub().to_owned()).await.is_ok(),
         Err(_) => false,
     }
@@ -32,10 +39,21 @@ impl<'a, 'r> FromRequest<'a, 'r> for AccessToken {
         request: &'a rocket::Request<'r>,
     ) -> rocket::request::Outcome<Self, Self::Error> {
         let db_conn = request.guard::<DbConn>().await.unwrap();
+        let config = request.managed_state::<GlobalConfig>().unwrap();
+        let jwt_config = request.managed_state::<JWTConfig>().unwrap();
         let keys: Vec<&str> = request.headers().get("token").collect();
         match keys.len() {
             0 => Outcome::Failure((Status::Unauthorized, AccessTokenError::Missing)),
-            1 if is_token_valid(&db_conn, keys[0]).await => Outcome::Success(AccessToken(keys[0].to_string())),
+            1 if is_token_valid(
+                &db_conn,
+                keys[0],
+                &config.auth_secret_key,
+                &jwt_config.validation,
+            )
+            .await =>
+            {
+                Outcome::Success(AccessToken(keys[0].to_string()))
+            }
             _ => Outcome::Failure((Status::Unauthorized, AccessTokenError::Invalid)),
         }
     }

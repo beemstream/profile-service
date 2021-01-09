@@ -6,22 +6,23 @@ use crate::{
 use crate::{
     repository::user::find,
     util::{
-        globals::{
-            COOKIE_REFRESH_TOKEN_NAME, REFRESH_TOKEN_EXPIRY, SECRET_KEY, TOKEN_EXPIRY, VALIDATION,
-        },
+        globals::COOKIE_REFRESH_TOKEN_NAME,
         response::{AuthResponse, FieldError, JsonStatus, StatusReason, TokenResponse},
     },
 };
-use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, TokenData};
-use rocket::http::{Cookie, CookieJar, Status};
+use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, TokenData, Validation};
+use rocket::{
+    config::SecretKey,
+    http::{Cookie, CookieJar, Status},
+};
 use rocket_contrib::databases::diesel::result::{DatabaseErrorInformation, Error};
 
-pub fn get_new_token(user_type: &UserType, duration: i64) -> (Claims, String) {
+pub fn get_new_token(user_type: &UserType, duration: i64, secret_key: &String) -> (Claims, String) {
     let claims = match user_type {
         UserType::LoginUser(u) => Claims::new(u.identifier.as_ref(), duration),
         UserType::StoredUser(u) => Claims::new(&u.username, duration),
     };
-    let encode_key = EncodingKey::from_secret(&SECRET_KEY.as_ref());
+    let encode_key = EncodingKey::from_secret(secret_key.as_ref());
     let new_token = encode(&generate_header(), &claims, &encode_key).unwrap();
     (claims, new_token)
 }
@@ -36,31 +37,42 @@ pub fn get_exp_time(claims: Claims) -> time::Duration {
 pub fn get_cookie_with_expiry_and_max_age<'a>(
     exp_time: time::Duration,
     refresh_token: String,
+    refresh_token_expiry: i64,
 ) -> Cookie<'a> {
     Cookie::build(COOKIE_REFRESH_TOKEN_NAME, refresh_token)
         .max_age(exp_time)
-        .expires(time::OffsetDateTime::now_utc() + time::Duration::seconds(*REFRESH_TOKEN_EXPIRY))
+        .expires(time::OffsetDateTime::now_utc() + time::Duration::seconds(refresh_token_expiry))
         .secure(true)
         .http_only(true)
         .finish()
 }
 
-pub fn verify_non_hashed_password(user: User, password: &str) -> Option<bool> {
-    bool_as_option(user.verify(password))
+pub fn verify_non_hashed_password(user: User, password: &str, secret_key: &String) -> Option<bool> {
+    bool_as_option(user.verify(password, secret_key))
 }
 
-pub fn add_refresh_cookie<'a>(user: UserType<'a>, cookie: &CookieJar) -> Option<UserType<'a>> {
-    let (refresh_claims, refresh_token) = get_new_token(&user, *REFRESH_TOKEN_EXPIRY);
+pub fn add_refresh_cookie<'a>(
+    user: UserType<'a>,
+    cookie: &CookieJar,
+    refresh_token_expiry: i64,
+    secret_key: &String,
+) -> Option<UserType<'a>> {
+    let (refresh_claims, refresh_token) = get_new_token(&user, refresh_token_expiry, secret_key);
     let refresh_exp = get_exp_time(refresh_claims);
     cookie.add_private(get_cookie_with_expiry_and_max_age(
         refresh_exp,
         refresh_token,
+        refresh_token_expiry,
     ));
     Some(user)
 }
 
-pub fn add_token_response<'a>(user: UserType<'a>) -> Option<(TokenResponse, Status)> {
-    let (claims, token) = get_new_token(&user, *TOKEN_EXPIRY);
+pub fn add_token_response<'a>(
+    user: UserType<'a>,
+    token_expiry: i64,
+    secret_key: &String,
+) -> Option<(TokenResponse, Status)> {
+    let (claims, token) = get_new_token(&user, token_expiry, secret_key);
     let token_exp = get_exp_time(claims);
     Some((
         TokenResponse::success(JsonStatus::Ok, token, token_exp.whole_seconds()),
@@ -68,9 +80,13 @@ pub fn add_token_response<'a>(user: UserType<'a>) -> Option<(TokenResponse, Stat
     ))
 }
 
-pub fn verify_jwt(cookie: &Cookie) -> Option<TokenData<Claims>> {
-    let decode_key = DecodingKey::from_secret(&SECRET_KEY.as_ref());
-    decode::<Claims>(cookie.value(), &decode_key, &VALIDATION).ok()
+pub fn verify_jwt(
+    cookie: &Cookie,
+    secret_key: &String,
+    validation: &Validation,
+) -> Option<TokenData<Claims>> {
+    let decode_key = DecodingKey::from_secret(secret_key.as_ref());
+    decode::<Claims>(cookie.value(), &decode_key, validation).ok()
 }
 
 pub async fn verify_username(conn: &DbConn, token_data: TokenData<Claims>) -> Option<User> {

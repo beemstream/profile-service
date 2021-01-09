@@ -8,7 +8,7 @@ fn creates_user_successfully() {
         let response = client
             .post("/register")
             .header(ContentType::JSON)
-            .body(r#"{ "username": "ibrahim", "email": "ibrahim@gmail.com", "password": "Ibrahim123123", "password_repeat": "Ibrahim123123" }"#)
+            .body(r#"{ "username": "ibrahim2", "email": "ibrahim2@gmail.com", "password": "Ibrahim123123", "password_repeat": "Ibrahim123123" }"#)
             .dispatch();
         assert_eq!(response.status(), Status::Ok);
         assert_eq!(response.into_string(), Some("{\"status\":\"ok\"}".into()));

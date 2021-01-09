@@ -45,7 +45,7 @@ pub fn create_user<'a>(client: &'a Client, username: &str) -> LocalResponse<'a> 
     response
 }
 
-lazy_static! {
+lazy_static::lazy_static! {
     pub static ref ROCKET_CLIENT: Mutex<Client> =
         Mutex::new(Client::tracked(crate::get_rocket()).expect("valid rocket instance"));
 }

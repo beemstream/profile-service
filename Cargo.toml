@@ -9,11 +9,9 @@ edition = "2018"
 [dependencies]
 chrono = { version = "0.4.10", features = ["serde"] }
 diesel = { version = "1.4.3", features = ["postgres", "chrono"] }
-dotenv = "0.15.0"
 serde = { version = "1.0", features = ["derive"]}
 serde_json = "1.0"
 serde_derive = "1.0"
-lazy_static = "1.4.0"
 rocket = { git = "https://github.com/SergioBenitez/Rocket.git", branch = "master", features = ["secrets"] }
 rocket_contrib = { git = "https://github.com/SergioBenitez/Rocket.git", branch = "master", features = ["json", "diesel_postgres_pool"] }
 rocket_codegen = { git = "https://github.com/SergioBenitez/Rocket.git" , branch = "master"}
@@ -22,7 +20,7 @@ validator_derive = "0.10"
 jsonwebtoken = "7"
 time = "0.2"
 rocket_cors = { git = "https://github.com/lawliet89/rocket_cors.git", branch = "master" }
-oauth2 = "2.0.0"
+oauth2 = { version = "3.0.0", features = ["futures-03", "reqwest-010"] }
 base64 = "0.12.0"
 url = "1.7.2"
 rand = "0.7.3"
@@ -30,3 +28,8 @@ async-trait = "0.1.31"
 futures = { version = "0.3.7", features = ["thread-pool"] }
 postgres = { version = "0.15", features = ["with-chrono"]  }
 rust-argon2 = "0.8"
+lettre = { version = "0.10.0-alpha.4", features = ["tokio02",  "smtp-transport", "tokio02-native-tls"] }
+socket2 = "0.3.12"
+
+[dev-dependencies]
+lazy_static = "1.4.0"
