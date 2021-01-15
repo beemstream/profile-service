@@ -1,12 +1,12 @@
 use super::users_util::{
-    add_refresh_cookie, add_token_response, get_auth_error_response, get_success_json_response,
-    get_validation_errors_response, update_refresh_token_cache, verify_jwt,
+    add_refresh_cookie, add_token_response, get_auth_error_response,
+    get_unprocessable_entity_error, update_refresh_token_cache, verify_jwt,
     verify_non_hashed_password, verify_username,
 };
 use crate::util::{
     authorization::AccessToken,
     globals::COOKIE_REFRESH_TOKEN_NAME,
-    response::{AuthResponse, JsonResponse, JsonStatus, TokenResponse},
+    response::{AuthResponse, Error, Response, TokenResponse},
     validator::Validator,
 };
 use crate::{
@@ -31,28 +31,27 @@ pub async fn register_user(
     conn: DbConn,
     user: Json<NewUserRequest>,
     global_config: State<'_, GlobalConfig>,
-) -> JsonResponse<AuthResponse> {
+) -> Result<Response<AuthResponse>, Error> {
     let user_request = user.into_inner();
-    let validation_errors = user_request.parsed_field_errors();
+    let error_codes = user_request.parse_error_codes();
 
-    let respond_with_validation_errors =
-        validation_errors.and_then(|errors| get_validation_errors_response(errors));
+    let respond_with_error_codes =
+        error_codes.and_then(|errors| get_unprocessable_entity_error(errors));
 
-    let saved_user = is_duplicate_user_or_email(&conn, user_request)
-        .and_then(|user| {
-            let mut new_user = NewUser::from(user);
-            new_user.hash_password(&global_config.auth_secret_key);
-            insert(&conn, new_user)
-        })
-        .await
-        .or_else(|e| Err(get_auth_error_response(e).unwrap()));
+    match respond_with_error_codes {
+        Some(e) => Err(Error::error_with_body(e.0, e.1)),
+        None => {
+            let saved_user = is_duplicate_user_or_email(&conn, user_request)
+                .and_then(|user| insert(&conn, NewUser::from(user, &global_config.auth_secret_key)))
+                .await
+                .or_else(|e| Err(get_auth_error_response(e)));
 
-    let (auth_response, status) = respond_with_validation_errors
-        .or_else(|| saved_user.err())
-        .or_else(|| get_success_json_response())
-        .unwrap();
-
-    JsonResponse::new(auth_response, status)
+            match saved_user {
+                Ok(_) => Ok(Response::success(None, Status::Created)),
+                Err(e) => Err(e),
+            }
+        }
+    }
 }
 
 #[post("/login", format = "application/json", data = "<user>")]
@@ -61,47 +60,50 @@ pub async fn login_user<'a>(
     user: Json<LoginUser>,
     cookies: &CookieJar<'a>,
     global_config: State<'a, GlobalConfig>,
-) -> JsonResponse<TokenResponse> {
+) -> Result<Response<TokenResponse>, Error> {
     let user: LoginUser = user.into_inner();
+    let error_codes = user.parse_error_codes();
 
-    let error_response = || {
-        Some((
-            TokenResponse::error(
-                JsonStatus::NotOk,
-                "Username/email or password is incorrect.".to_string(),
-            ),
-            Status::Unauthorized,
-        ))
-    };
+    let respond_with_error_codes =
+        error_codes.and_then(|errors| get_unprocessable_entity_error(errors));
 
-    let token_response = find(&conn, user.identifier.clone())
-        .await
-        .ok()
-        .and_then(|found_user| {
-            verify_non_hashed_password(
-                found_user,
-                user.password.as_ref(),
-                &global_config.auth_secret_key,
-            )
-        })
-        .and_then(|_| {
-            add_refresh_cookie(
-                UserType::LoginUser(&user),
-                cookies,
-                global_config.refresh_token_expiry,
-                &global_config.auth_secret_key,
-            )
-        })
-        .and_then(|_| {
-            add_token_response(
-                UserType::LoginUser(&user),
-                global_config.token_expiry,
-                &global_config.auth_secret_key,
-            )
-        });
+    let error_response = || Some(Err(Error::Error(Status::Unauthorized)));
 
-    let (response, status) = token_response.or_else(error_response).unwrap();
-    JsonResponse::new(response, status)
+    match respond_with_error_codes {
+        Some(e) => Err(Error::error_with_body(e.0, e.1)),
+        None => {
+            let response = find(&conn, user.identifier.clone().unwrap().clone())
+                .await
+                .ok()
+                .and_then(|found_user| {
+                    verify_non_hashed_password(
+                        found_user,
+                        user.password.clone().unwrap().as_ref(),
+                        &global_config.auth_secret_key,
+                    )
+                })
+                .and_then(|_| {
+                    add_refresh_cookie(
+                        UserType::LoginUser(&user),
+                        cookies,
+                        global_config.refresh_token_expiry,
+                        &global_config.auth_secret_key,
+                    )
+                })
+                .and_then(|_| {
+                    add_token_response(
+                        UserType::LoginUser(&user),
+                        global_config.token_expiry,
+                        &global_config.auth_secret_key,
+                    )
+                });
+
+            response
+                .and_then(|(j, s)| Some(Ok(Response::success(Some(j), s))))
+                .or_else(error_response)
+                .unwrap()
+        }
+    }
 }
 
 #[get("/refresh-token")]
@@ -111,21 +113,15 @@ pub async fn refresh_token<'a>(
     _access_token: AccessToken,
     global_config: State<'a, GlobalConfig>,
     jwt_config: State<'a, JWTConfig>,
-) -> JsonResponse<TokenResponse> {
+) -> Result<Response<TokenResponse>, Error> {
     let refresh_token = cookie.get_private(COOKIE_REFRESH_TOKEN_NAME);
-
-    let error_response = Some((
-        TokenResponse::error(JsonStatus::NotOk, "Unauthorized".to_string()),
-        Status::Unauthorized,
-    ));
 
     let token_data = match refresh_token
         .as_ref()
         .and_then(|t| verify_jwt(t, &global_config.auth_secret_key, &jwt_config.validation))
     {
         None => {
-            let (r, s) = error_response.unwrap();
-            return JsonResponse::new(r, s);
+            return Err(Error::error(None, Status::Unauthorized));
         }
         Some(v) => v,
     };
@@ -148,10 +144,10 @@ pub async fn refresh_token<'a>(
                 global_config.token_expiry,
                 &global_config.auth_secret_key,
             )
-        });
+        })
+        .and_then(|(response, status)| Some(Response::success(Some(response), status)));
 
-    let (response, status) = token_response.or_else(|| error_response).unwrap();
-    JsonResponse::new(response, status)
+    token_response.ok_or(Error::error(None, Status::Unauthorized))
 }
 
 #[get("/authenticate")]

@@ -28,7 +28,7 @@ use database::DbConn;
 use jwt::jwt_validation;
 use rocket::{
     http::Method::{Get, Post},
-    Rocket, Route,
+    Request, Rocket, Route,
 };
 use rocket_cors::{AllowedOrigins, Error};
 use util::globals::{GlobalConfig, JWTConfig, TwitchConfig};
@@ -43,6 +43,11 @@ fn setup_up_cors(origins: &Vec<String>) -> Result<rocket_cors::Cors, Error> {
         ..Default::default()
     }
     .to_cors()
+}
+
+#[catch(401)]
+fn not_authorized(_req: &Request) {
+    ()
 }
 
 #[launch]
@@ -72,4 +77,5 @@ fn get_rocket() -> Rocket {
         .manage(global_config)
         .manage(jwt)
         .manage(twitch_config)
+        .register(catchers![not_authorized])
 }

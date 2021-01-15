@@ -10,8 +10,7 @@ fn creates_user_successfully() {
             .header(ContentType::JSON)
             .body(r#"{ "username": "ibrahim2", "email": "ibrahim2@gmail.com", "password": "Ibrahim123123", "password_repeat": "Ibrahim123123" }"#)
             .dispatch();
-        assert_eq!(response.status(), Status::Ok);
-        assert_eq!(response.into_string(), Some("{\"status\":\"ok\"}".into()));
+        assert_eq!(response.status(), Status::Created);
     });
 }
 
@@ -25,12 +24,11 @@ fn cannot_create_with_not_same_password() {
             .body(r#"{ "username": "ibrahim", "email": "ibrahim@gmail.com", "password": "Ibrahim123123", "password_repeat": "not_same" }"#)
             .dispatch();
 
-        assert_eq!(response.status(), Status::BadRequest);
+        assert_eq!(response.status(), Status::UnprocessableEntity);
 
         let body = response.into_string().unwrap();
 
-        assert_eq!(body.contains("not ok"), true);
-        assert_eq!(body.contains("Password does not match."), true);
+        assert_eq!(body.contains("password_not_matching"), true);
     });
 }
 
@@ -50,12 +48,9 @@ fn cannot_create_user_with_same_username() {
             .body(r#"{ "username": "foobar", "email": "foobar@gmail.com", "password": "Ibrahim123123", "password_repeat": "Ibrahim123123" }"#)
             .dispatch();
 
-        assert_eq!(response.status(), Status::BadRequest);
+        assert_eq!(response.status(), Status::Conflict);
         assert_eq!(
-            response
-                .into_string()
-                .unwrap()
-                .contains("Username already exists."),
+            response.into_string().unwrap().contains("username_exists"),
             true
         );
     });
@@ -76,12 +71,9 @@ fn cannot_create_user_with_same_email() {
             .body(r#"{ "username": "different_username", "email": "foobar3@gmail.com", "password": "Ibrahim123123", "password_repeat": "Ibrahim123123" }"#)
             .dispatch();
 
-        assert_eq!(response.status(), Status::BadRequest);
+        assert_eq!(response.status(), Status::Conflict);
         assert_eq!(
-            response
-                .into_string()
-                .unwrap()
-                .contains("Email already exists."),
+            response.into_string().unwrap().contains("email_exists"),
             true
         );
     });
@@ -97,12 +89,12 @@ fn cannot_create_user_with_not_strong_password() {
             .body(r#"{ "username": "bazfoo", "email": "bazfoo@gmail.com", "password": "Ibrahim123", "password_repeat": "Ibrahim123" }"#)
             .dispatch();
 
-        assert_eq!(response.status(), Status::BadRequest);
+        assert_eq!(response.status(), Status::UnprocessableEntity);
         assert_eq!(
             response
                 .into_string()
                 .unwrap()
-                .contains("Password must be 12 characters or more"),
+                .contains("password_length_invalid"),
             true
         );
     });
@@ -118,9 +110,8 @@ fn cannot_create_user_with_incorrect_email() {
             .body(r#"{ "username": "bazfoo", "email": "invalid_email", "password": "Ibrahim123123", "password_repeat": "Ibrahim123123" }"#)
             .dispatch();
 
-        assert_eq!(response.status(), Status::BadRequest);
+        assert_eq!(response.status(), Status::UnprocessableEntity);
         let body = response.into_string().unwrap();
-        assert_eq!(body.contains("not ok"), true);
-        assert_eq!(body.contains("Please enter a valid email address."), true);
+        assert_eq!(body.contains("email_invalid"), true);
     });
 }

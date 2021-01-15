@@ -40,7 +40,7 @@ pub fn create_user<'a>(client: &'a Client, username: &str) -> LocalResponse<'a> 
         .body(json.to_string())
         .dispatch();
 
-    assert_eq!(response.status(), Status::Ok);
+    assert_eq!(response.status(), Status::Created);
 
     response
 }

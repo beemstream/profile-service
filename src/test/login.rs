@@ -16,9 +16,8 @@ fn login_user_successfully_with_username() {
         assert_eq!(response.status(), Status::Ok);
 
         let body = response.into_string().unwrap();
-        assert_eq!(body.contains("\"status\":\"ok\""), true);
-        assert_eq!(body.contains("\"access_token\""), true);
-        assert_eq!(body.contains("\"expires_in\""), true);
+        assert_eq!(body.contains("access_token"), true);
+        assert_eq!(body.contains("expires_in"), true);
     });
 }
 
@@ -36,9 +35,8 @@ fn login_user_successfully_with_email() {
 
         assert_eq!(response.status(), Status::Ok);
         let body = response.into_string().unwrap();
-        assert_eq!(body.contains("\"status\":\"ok\""), true);
-        assert_eq!(body.contains("\"access_token\""), true);
-        assert_eq!(body.contains("\"expires_in\""), true);
+        assert_eq!(body.contains("access_token"), true);
+        assert_eq!(body.contains("expires_in"), true);
     });
 }
 
@@ -56,13 +54,7 @@ fn fails_login_username_with_wrong_password() {
 
         assert_eq!(response.status(), Status::Unauthorized);
 
-        let body = response.into_string().unwrap();
-
-        assert_eq!(body.contains("not ok"), true);
-        assert_eq!(
-            body.contains("Username/email or password is incorrect."),
-            true
-        );
+        // let body = response.into_string().unwrap();
     });
 }
 
@@ -80,12 +72,6 @@ fn fails_login_email_with_wrong_password() {
 
         assert_eq!(response.status(), Status::Unauthorized);
 
-        let body = response.into_string().unwrap();
-
-        assert_eq!(body.contains("not ok"), true);
-        assert_eq!(
-            body.contains("Username/email or password is incorrect."),
-            true
-        );
+        // let body = response.into_string().unwrap();
     });
 }

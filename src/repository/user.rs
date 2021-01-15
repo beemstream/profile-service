@@ -59,8 +59,8 @@ pub async fn is_duplicate_user_or_email(
     user: NewUserRequest,
 ) -> Result<NewUserRequest, diesel::result::Error> {
     conn.run(|c| {
-        let found_username = get_by_username(&user.username, c);
-        let found_email = get_by_email(&user.email, c);
+        let found_username = get_by_username(&user.username.to_owned().unwrap(), c);
+        let found_email = get_by_email(&user.email.to_owned().unwrap(), c);
 
         let is_found_by_username = has_found_user(found_username);
         let is_found_by_email = has_found_user(found_email);
@@ -68,12 +68,12 @@ pub async fn is_duplicate_user_or_email(
         if is_found_by_username {
             Err(DatabaseError(
                 UniqueViolation,
-                RegisterError::new("username", "Username already exists."),
+                RegisterError::new("username", "username_exists"),
             ))
         } else if is_found_by_email {
             Err(DatabaseError(
                 UniqueViolation,
-                RegisterError::new("email", "Email already exists."),
+                RegisterError::new("email", "email_exists"),
             ))
         } else {
             Ok(user)

@@ -35,16 +35,18 @@ impl User {
 
 #[derive(Deserialize, Validate, Serialize)]
 pub struct NewUserRequest {
-    #[validate(email(message = "Please enter a valid email address."))]
-    pub email: String,
-    #[validate(length(min = 4, message = "Username must be 4 characters or more."))]
-    pub username: String,
+    #[validate(required, email(message = "email_invalid"))]
+    pub email: Option<String>,
+    #[validate(required, length(min = 4, message = "username_length_invalid"))]
+    pub username: Option<String>,
     #[validate(
-        length(min = 12, message = "Password must be 12 characters or more."),
-        must_match(other = "password_repeat", message = "Password does not match.")
+        required,
+        length(min = 12, message = "password_length_invalid"),
+        must_match(other = "password_repeat", message = "password_not_matching")
     )]
-    pub password: String,
-    pub password_repeat: String,
+    pub password: Option<String>,
+    #[validate(required)]
+    pub password_repeat: Option<String>,
 }
 
 #[derive(Insertable, Deserialize, Serialize)]
@@ -56,33 +58,40 @@ pub struct NewUser {
 }
 
 impl NewUser {
-    pub fn hash_password(&mut self, secret_key: &String) -> &mut Self {
+    pub fn hash_password(password: String, secret_key: &String) -> String {
         let config = Config {
             secret: secret_key.as_bytes(),
             ..Config::default()
         };
         let salt = rand::thread_rng().gen::<[u8; 32]>();
-        let hash = hash_encoded(self.password.as_bytes(), &salt, &config).unwrap();
-        self.password = hash;
-        self
+        let hash = hash_encoded(password.as_bytes(), &salt, &config).unwrap();
+
+        hash
     }
 
-    pub fn from(new_user_request: NewUserRequest) -> Self {
+    pub fn from(new_user_request: NewUserRequest, secret_key: &String) -> Self {
         Self {
-            username: new_user_request.username.to_owned(),
-            email: new_user_request.email.to_owned(),
-            password: new_user_request.password.to_owned(),
+            username: new_user_request.username.to_owned().unwrap(),
+            email: new_user_request.email.to_owned().unwrap(),
+            password: NewUser::hash_password(
+                new_user_request.password.to_owned().unwrap(),
+                secret_key,
+            ),
         }
     }
 }
 
 impl Validator for NewUserRequest {}
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Validate)]
 pub struct LoginUser {
-    pub identifier: String,
-    pub password: String,
+    #[validate(required)]
+    pub identifier: Option<String>,
+    #[validate(required, length(min = 12))]
+    pub password: Option<String>,
 }
+
+impl Validator for LoginUser {}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {

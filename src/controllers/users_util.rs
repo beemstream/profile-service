@@ -2,13 +2,11 @@ use crate::{
     database::DbConn,
     jwt::generate_header,
     models::user::{Claims, User, UserType},
+    util::response::{ErrorResponse, ErrorType},
 };
 use crate::{
     repository::user::find,
-    util::{
-        globals::COOKIE_REFRESH_TOKEN_NAME,
-        response::{AuthResponse, FieldError, JsonStatus, StatusReason, TokenResponse},
-    },
+    util::{globals::COOKIE_REFRESH_TOKEN_NAME, response::TokenResponse},
 };
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, TokenData, Validation};
 use rocket::http::{Cookie, CookieJar, Status};
@@ -16,7 +14,7 @@ use rocket_contrib::databases::diesel::result::{DatabaseErrorInformation, Error}
 
 pub fn get_new_token(user_type: &UserType, duration: i64, secret_key: &String) -> (Claims, String) {
     let claims = match user_type {
-        UserType::LoginUser(u) => Claims::new(u.identifier.as_ref(), duration),
+        UserType::LoginUser(u) => Claims::new(u.identifier.clone().unwrap().as_ref(), duration),
         UserType::StoredUser(u) => Claims::new(&u.username, duration),
     };
     let encode_key = EncodingKey::from_secret(secret_key.as_ref());
@@ -72,7 +70,7 @@ pub fn add_token_response<'a>(
     let (claims, token) = get_new_token(&user, token_expiry, secret_key);
     let token_exp = get_exp_time(claims);
     Some((
-        TokenResponse::success(JsonStatus::Ok, token, token_exp.whole_seconds()),
+        TokenResponse::success(token, token_exp.whole_seconds()),
         Status::Ok,
     ))
 }
@@ -97,31 +95,30 @@ pub fn bool_as_option(is_verified: bool) -> Option<bool> {
     }
 }
 
-pub fn get_success_json_response() -> Option<(AuthResponse, Status)> {
-    let auth_response: AuthResponse = AuthResponse::success();
-    Some((auth_response, Status::Ok))
+pub fn get_internal_error_response() -> crate::util::response::Error {
+    crate::util::response::Error::Error(Status::InternalServerError)
 }
 
-pub fn get_internal_error_response() -> Option<(AuthResponse, Status)> {
-    let auth_response = AuthResponse::internal_error(StatusReason::ServerError);
-    Some((auth_response, Status::InternalServerError))
-}
-
-pub fn get_validation_errors_response(errors: Vec<FieldError>) -> Option<(AuthResponse, Status)> {
-    let auth_response = AuthResponse::validation_error(StatusReason::FieldErrors, errors);
-    Some((auth_response, Status::BadRequest))
+pub fn get_unprocessable_entity_error(error_codes: Vec<String>) -> Option<(ErrorResponse, Status)> {
+    let auth_response = ErrorResponse {
+        error_type: Some(ErrorType::RequestInvalid),
+        error_codes: Some(error_codes),
+    };
+    Some((auth_response, Status::UnprocessableEntity))
 }
 
 pub fn get_database_error_response(
     db_error: Box<dyn DatabaseErrorInformation + Send + Sync>,
-) -> Option<(AuthResponse, Status)> {
+) -> crate::util::response::Error {
     let db_error_message = String::from(db_error.message());
-    let auth_response =
-        AuthResponse::validation_error(StatusReason::Other(db_error_message), vec![]);
-    Some((auth_response, Status::BadRequest))
+    let auth_response = ErrorResponse {
+        error_type: Some(ErrorType::RequestInvalid),
+        error_codes: Some(vec![db_error_message]),
+    };
+    crate::util::response::Error::error_with_body(auth_response, Status::Conflict)
 }
 
-pub fn get_auth_error_response(error: Error) -> Option<(AuthResponse, Status)> {
+pub fn get_auth_error_response(error: Error) -> crate::util::response::Error {
     match error {
         Error::DatabaseError(_, db_error) => get_database_error_response(db_error),
         _ => get_internal_error_response(),

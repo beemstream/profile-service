@@ -3,7 +3,7 @@ use crate::{
     oauth::twitch_authenticate,
     util::{
         globals::TwitchConfig,
-        response::{JsonResponse, JsonStatus, TokenResponse},
+        response::{Error, Response, TokenResponse},
     },
 };
 use rocket::{http::CookieJar, response::Redirect};
@@ -34,8 +34,8 @@ pub fn twitch_token<'a>(
     twitch_grant: Json<TwitchGrant>,
     cookies: &CookieJar<'a>,
     twitch_config: State<'a, TwitchConfig>,
-) -> JsonResponse<TokenResponse> {
-    let response = match get_oauth_response(
+) -> Result<Response<TokenResponse>, Error> {
+    match get_oauth_response(
         twitch_grant.code,
         twitch_config.twitch_client_id.to_owned(),
         twitch_config.twitch_client_secret.to_owned(),
@@ -44,26 +44,19 @@ pub fn twitch_token<'a>(
         Ok(response) => {
             let (access_token, refresh_token, expires_in) = response;
             cookies.add_private(Cookie::new("refresh_token", refresh_token));
-            (
+            Ok(Response::success(
+                Some(TokenResponse::success(
+                    access_token,
+                    expires_in.as_secs() as i64,
+                )),
                 Status::Ok,
-                TokenResponse::success(JsonStatus::Ok, access_token, expires_in.as_secs() as i64),
-            )
+            ))
         }
         Err(e) => match e {
-            oauth2::RequestTokenError::ServerResponse(response) => {
-                let error = response.error_description().unwrap();
-                (
-                    Status::BadRequest,
-                    TokenResponse::error(JsonStatus::NotOk, error.to_string()),
-                )
+            oauth2::RequestTokenError::ServerResponse(_response) => {
+                Err(Error::Error(Status::Unauthorized))
             }
-            _ => (
-                Status::BadGateway,
-                TokenResponse::error(JsonStatus::NotOk, "InternalServerError".to_string()),
-            ),
+            _ => (Err(Error::Error(Status::Unauthorized))),
         },
-    };
-
-    let (status, r) = response;
-    JsonResponse::new(r, status)
+    }
 }

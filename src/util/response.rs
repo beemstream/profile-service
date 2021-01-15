@@ -1,75 +1,103 @@
 use rocket::http::{ContentType, Status};
 use rocket::request::Request;
-use rocket::response::{self, Responder, Response};
+use rocket::response::Responder;
 use rocket_contrib::json::Json;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize)]
-pub enum JsonStatus {
-    #[serde(rename(serialize = "ok"))]
-    Ok,
-    #[serde(rename(serialize = "not ok"))]
-    NotOk,
-    #[serde(rename(serialize = "error"))]
-    Error,
-}
-
-#[derive(Serialize)]
-pub enum StatusReason {
-    #[serde(rename(serialize = "FIELD_ERRORS"))]
-    FieldErrors,
-    #[serde(rename(serialize = "SERVER_ERROR"))]
-    ServerError,
-    Other(String),
-}
-
-#[derive(Serialize)]
-pub struct FieldError {
-    name: String,
-    message: Vec<String>,
-}
-
-impl FieldError {
-    pub fn new(name: String, message: Vec<String>) -> Self {
-        Self { name, message }
-    }
-}
-
-#[derive(Serialize)]
 pub struct AuthResponse {
-    status: JsonStatus,
     #[serde(skip_serializing_if = "Option::is_none")]
-    reason: Option<StatusReason>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    fields: Option<Vec<FieldError>>,
+    error_codes: Option<Vec<String>>,
 }
 
-impl AuthResponse {
-    pub fn success() -> Self {
-        Self {
-            status: JsonStatus::Ok,
-            reason: None,
-            fields: None,
+#[serde(rename_all = "snake_case")]
+#[derive(Debug, Serialize)]
+pub enum ErrorType {
+    RequestInvalid,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ErrorResponse {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error_type: Option<ErrorType>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error_codes: Option<Vec<String>>,
+}
+
+#[derive(Debug)]
+pub enum Response<T>
+where
+    T: Serialize,
+{
+    Success(Status),
+    SuccessWithBody(JsonResponse<T>),
+}
+
+pub enum Error {
+    ErrorWithBody(JsonResponse<ErrorResponse>),
+    Error(Status),
+}
+
+impl Error {
+    pub fn error(error: Option<(Vec<String>, ErrorType)>, status: Status) -> Self {
+        match error {
+            Some(e) => {
+                let body = ErrorResponse {
+                    error_codes: Some(e.0),
+                    error_type: Some(e.1),
+                };
+                Self::ErrorWithBody(JsonResponse::new(body, status))
+            }
+            None => Self::Error(status),
         }
     }
 
-    pub fn validation_error(reason: StatusReason, fields: Vec<FieldError>) -> Self {
-        Self {
-            status: JsonStatus::NotOk,
-            reason: Some(reason),
-            fields: Some(fields),
-        }
+    pub fn error_with_body(json: ErrorResponse, status: Status) -> Self {
+        Self::ErrorWithBody(JsonResponse::new(json, status))
     }
+}
 
-    pub fn internal_error(reason: StatusReason) -> Self {
-        Self {
-            status: JsonStatus::Error,
-            reason: Some(reason),
-            fields: None,
+impl<'r> Responder<'r, 'static> for Error {
+    fn respond_to(self, request: &'r Request<'_>) -> rocket::response::Result<'static> {
+        match self {
+            Error::Error(e) => e.respond_to(&request),
+            Error::ErrorWithBody(e) => {
+                rocket::Response::build_from(e.json.respond_to(&request).unwrap())
+                    .status(e.status)
+                    .header(ContentType::JSON)
+                    .ok()
+            }
         }
     }
 }
 
+impl<'r, T: serde::Serialize> Responder<'r, 'static> for Response<T> {
+    fn respond_to(self, request: &'r Request<'_>) -> rocket::response::Result<'static> {
+        match self {
+            Response::Success(s) => s.respond_to(&request),
+            Response::SuccessWithBody(s) => {
+                rocket::Response::build_from(s.json.respond_to(&request).unwrap())
+                    .status(s.status)
+                    .header(ContentType::JSON)
+                    .ok()
+            }
+        }
+    }
+}
+
+impl<T> Response<T>
+where
+    T: Serialize,
+{
+    pub fn success(json: Option<T>, status: Status) -> Self {
+        match json {
+            Some(j) => Self::SuccessWithBody(JsonResponse::new(j, status)),
+            None => Self::Success(status),
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct JsonResponse<T> {
     pub json: Json<T>,
     pub status: Status,
@@ -85,8 +113,8 @@ impl<T> JsonResponse<T> {
 }
 
 impl<'r, T: serde::Serialize> Responder<'r, 'static> for JsonResponse<T> {
-    fn respond_to(self, request: &'r Request<'_>) -> response::Result<'static> {
-        Response::build_from(self.json.respond_to(&request).unwrap())
+    fn respond_to(self, request: &'r Request<'_>) -> rocket::response::Result<'static> {
+        rocket::Response::build_from(self.json.respond_to(&request).unwrap())
             .status(self.status)
             .header(ContentType::JSON)
             .ok()
@@ -95,31 +123,17 @@ impl<'r, T: serde::Serialize> Responder<'r, 'static> for JsonResponse<T> {
 
 #[derive(Serialize)]
 pub struct TokenResponse {
-    status: JsonStatus,
     #[serde(skip_serializing_if = "Option::is_none")]
     access_token: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     expires_in: Option<i64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    reason: Option<String>,
 }
 
 impl TokenResponse {
-    pub fn success(status: JsonStatus, access_token: String, expires_in: i64) -> Self {
+    pub fn success(access_token: String, expires_in: i64) -> Self {
         Self {
-            status,
             access_token: Some(access_token),
             expires_in: Some(expires_in),
-            reason: None,
-        }
-    }
-
-    pub fn error(status: JsonStatus, reason: String) -> Self {
-        Self {
-            status,
-            reason: Some(reason),
-            expires_in: None,
-            access_token: None,
         }
     }
 }
