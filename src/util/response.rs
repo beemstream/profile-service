@@ -33,6 +33,7 @@ where
     SuccessWithBody(JsonResponse<T>),
 }
 
+#[derive(Debug)]
 pub enum Error {
     ErrorWithBody(JsonResponse<ErrorResponse>),
     Error(Status),

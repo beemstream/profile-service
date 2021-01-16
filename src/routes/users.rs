@@ -1,6 +1,6 @@
 use super::users_util::{
-    add_refresh_cookie, add_token_response, get_auth_error_response, update_refresh_token_cache,
-    verify_jwt, verify_non_hashed_password, verify_username,
+    add_refresh_cookie, add_token_response, update_refresh_token_cache, verify_jwt,
+    verify_non_hashed_password, verify_username,
 };
 use crate::util::{
     authorization::AccessToken,
@@ -34,17 +34,10 @@ pub async fn register_user(
     let user_request = user.into_inner();
 
     match user_request.validate_model() {
-        Ok(_) => {
-            let saved_user = is_duplicate_user_or_email(&conn, user_request)
-                .and_then(|user| insert(&conn, NewUser::from(user, &global_config.auth_secret_key)))
-                .await
-                .or_else(|e| Err(get_auth_error_response(e)));
-
-            match saved_user {
-                Ok(_) => Ok(Status::Created),
-                Err(e) => Err(e),
-            }
-        }
+        Ok(_) => is_duplicate_user_or_email(&conn, user_request)
+            .and_then(|user| insert(&conn, NewUser::from(user, &global_config.auth_secret_key)))
+            .await
+            .and_then(|_| Ok(Status::Created)),
         Err(e) => Err(e),
     }
 }
@@ -64,6 +57,7 @@ pub async fn login_user<'a>(
         Ok(_) => {
             let response = find(&conn, user.identifier.clone().unwrap().clone())
                 .await
+                .map_err(|_| Error::Error(Status::Unauthorized))
                 .ok()
                 .and_then(|found_user| {
                     verify_non_hashed_password(
