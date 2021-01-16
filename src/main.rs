@@ -11,13 +11,13 @@ extern crate argon2;
 extern crate chrono;
 extern crate oauth2;
 
-mod controllers;
 mod database;
 mod email_sender;
 mod jwt;
 mod models;
 mod oauth;
 mod repository;
+mod routes;
 mod schema;
 mod util;
 
@@ -54,12 +54,12 @@ fn not_authorized(_req: &Request) {
 fn get_rocket() -> Rocket {
     let rocket = rocket::ignite();
     let routes: Vec<Route> = routes![
-        controllers::users::register_user,
-        controllers::users::login_user,
-        controllers::users::refresh_token,
-        controllers::users::authenticate,
-        controllers::oauth::twitch_auth,
-        controllers::oauth::twitch_token,
+        routes::users::register_user,
+        routes::users::login_user,
+        routes::users::refresh_token,
+        routes::users::authenticate,
+        routes::oauth::twitch_auth,
+        routes::oauth::twitch_token,
     ];
 
     let figment = rocket.figment();

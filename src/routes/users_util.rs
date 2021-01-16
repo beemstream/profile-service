@@ -1,7 +1,7 @@
 use crate::{
     database::DbConn,
-    jwt::generate_header,
-    models::user::{Claims, User, UserType},
+    jwt::{generate_header, Claims},
+    models::user::{User, UserType},
     util::response::{ErrorResponse, ErrorType},
 };
 use crate::{
@@ -97,14 +97,6 @@ pub fn bool_as_option(is_verified: bool) -> Option<bool> {
 
 pub fn get_internal_error_response() -> crate::util::response::Error {
     crate::util::response::Error::Error(Status::InternalServerError)
-}
-
-pub fn get_unprocessable_entity_error(error_codes: Vec<String>) -> Option<(ErrorResponse, Status)> {
-    let auth_response = ErrorResponse {
-        error_type: Some(ErrorType::RequestInvalid),
-        error_codes: Some(error_codes),
-    };
-    Some((auth_response, Status::UnprocessableEntity))
 }
 
 pub fn get_database_error_response(

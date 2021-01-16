@@ -85,18 +85,6 @@ pub async fn is_duplicate_user_or_email(
 pub async fn insert(conn: &DbConn, user: NewUser) -> Result<usize, diesel::result::Error> {
     conn.run(|c| diesel::insert_into(users::table).values(user).execute(c))
         .await
-    // let found_username = get_by_username(&user.username, conn);
-    // let found_email = get_by_email(&user.email, conn);
-
-    // let is_found_by_username = has_found_user(found_username);
-    // let is_found_by_email = has_found_user(found_email);
-
-    // if is_found_by_username {
-    //     Err(DatabaseError(UniqueViolation, RegisterError::new("username", "Username already exists.")))
-    // } else if is_found_by_email {
-    //     Err(DatabaseError(UniqueViolation, RegisterError::new("email", "Email already exists.")))
-    // } else {
-    // }
 }
 
 pub async fn find(conn: &DbConn, identifier: String) -> Result<User, diesel::result::Error> {

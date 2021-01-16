@@ -1,4 +1,4 @@
-use crate::{database::DbConn, models::user::Claims, repository::user::find};
+use crate::{database::DbConn, jwt::Claims, repository::user::find};
 use jsonwebtoken::{decode, DecodingKey, Validation};
 use rocket::{
     http::Status,

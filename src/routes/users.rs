@@ -1,12 +1,11 @@
 use super::users_util::{
-    add_refresh_cookie, add_token_response, get_auth_error_response,
-    get_unprocessable_entity_error, update_refresh_token_cache, verify_jwt,
-    verify_non_hashed_password, verify_username,
+    add_refresh_cookie, add_token_response, get_auth_error_response, update_refresh_token_cache,
+    verify_jwt, verify_non_hashed_password, verify_username,
 };
 use crate::util::{
     authorization::AccessToken,
     globals::COOKIE_REFRESH_TOKEN_NAME,
-    response::{AuthResponse, Error, Response, TokenResponse},
+    response::{Error, Response, TokenResponse},
     validator::Validator,
 };
 use crate::{
@@ -31,26 +30,22 @@ pub async fn register_user(
     conn: DbConn,
     user: Json<NewUserRequest>,
     global_config: State<'_, GlobalConfig>,
-) -> Result<Response<AuthResponse>, Error> {
+) -> Result<Status, Error> {
     let user_request = user.into_inner();
-    let error_codes = user_request.parse_error_codes();
 
-    let respond_with_error_codes =
-        error_codes.and_then(|errors| get_unprocessable_entity_error(errors));
-
-    match respond_with_error_codes {
-        Some(e) => Err(Error::error_with_body(e.0, e.1)),
-        None => {
+    match user_request.validate_model() {
+        Ok(_) => {
             let saved_user = is_duplicate_user_or_email(&conn, user_request)
                 .and_then(|user| insert(&conn, NewUser::from(user, &global_config.auth_secret_key)))
                 .await
                 .or_else(|e| Err(get_auth_error_response(e)));
 
             match saved_user {
-                Ok(_) => Ok(Response::success(None, Status::Created)),
+                Ok(_) => Ok(Status::Created),
                 Err(e) => Err(e),
             }
         }
+        Err(e) => Err(e),
     }
 }
 
@@ -62,16 +57,11 @@ pub async fn login_user<'a>(
     global_config: State<'a, GlobalConfig>,
 ) -> Result<Response<TokenResponse>, Error> {
     let user: LoginUser = user.into_inner();
-    let error_codes = user.parse_error_codes();
-
-    let respond_with_error_codes =
-        error_codes.and_then(|errors| get_unprocessable_entity_error(errors));
 
     let error_response = || Some(Err(Error::Error(Status::Unauthorized)));
 
-    match respond_with_error_codes {
-        Some(e) => Err(Error::error_with_body(e.0, e.1)),
-        None => {
+    match user.validate_model() {
+        Ok(_) => {
             let response = find(&conn, user.identifier.clone().unwrap().clone())
                 .await
                 .ok()
@@ -103,6 +93,7 @@ pub async fn login_user<'a>(
                 .or_else(error_response)
                 .unwrap()
         }
+        Err(e) => Err(e),
     }
 }
 
@@ -120,9 +111,7 @@ pub async fn refresh_token<'a>(
         .as_ref()
         .and_then(|t| verify_jwt(t, &global_config.auth_secret_key, &jwt_config.validation))
     {
-        None => {
-            return Err(Error::error(None, Status::Unauthorized));
-        }
+        None => return Err(Error::error(None, Status::Unauthorized)),
         Some(v) => v,
     };
 
