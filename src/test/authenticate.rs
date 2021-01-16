@@ -49,13 +49,12 @@ fn does_not_authenticate_token_when_expired() {
         .body(r#"{ "identifier": "expire_auth", "password": "Ibrahim123123" }"#)
         .dispatch();
 
+    let token = get_access_token(&token_response.into_string());
     let mut request = client.get("/authenticate").header(ContentType::JSON);
 
-    let token = get_access_token(&token_response.into_string());
-    request.add_header(Header::new("token", token));
+    request.add_header(Header::new("token", format!("Bearer {}", token)));
 
-    thread::sleep(time::Duration::from_millis(2000));
-
+    thread::sleep(time::Duration::from_millis(4000));
     let response = request.dispatch();
 
     assert_eq!(response.status(), Status::Unauthorized);
