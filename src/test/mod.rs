@@ -13,14 +13,6 @@ mod login;
 mod refresh_token;
 mod register;
 
-pub fn run_test<T>(test: T) -> ()
-where
-    T: FnOnce() -> () + panic::UnwindSafe,
-{
-    let result = panic::catch_unwind(|| test());
-    assert!(result.is_ok())
-}
-
 pub fn get_access_token(body_string: &Option<String>) -> String {
     let token: Value = serde_json::from_str(body_string.clone().unwrap().as_str()).unwrap();
     token["access_token"].as_str().unwrap().to_owned()
