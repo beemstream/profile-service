@@ -27,7 +27,7 @@ pub fn create_user<'a>(client: &'a Client, username: &str) -> LocalResponse<'a> 
     });
 
     let response = client
-        .post("/register")
+        .post("/auth/register")
         .header(ContentType::JSON)
         .body(json.to_string())
         .dispatch();

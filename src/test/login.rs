@@ -7,7 +7,7 @@ fn login_user_successfully_with_username() {
     create_user(&client, "login");
 
     let response = client
-        .post("/login")
+        .post("/auth/login")
         .header(ContentType::JSON)
         .body(r#"{ "identifier": "login", "password": "Ibrahim123123" }"#)
         .dispatch();
@@ -25,7 +25,7 @@ fn login_user_successfully_with_email() {
     create_user(&client, "email_login");
 
     let response = client
-        .post("/login")
+        .post("/auth/login")
         .header(ContentType::JSON)
         .body(r#"{ "identifier": "email_login@gmail.com", "password": "Ibrahim123123" }"#)
         .dispatch();
@@ -42,7 +42,7 @@ fn fails_login_username_with_wrong_password() {
     create_user(&client, "wrongpassword");
 
     let response = client
-        .post("/login")
+        .post("/auth/login")
         .header(ContentType::JSON)
         .body(r#"{ "identifier": "wrongpassword", "password": "invalid_password" }"#)
         .dispatch();
@@ -56,7 +56,7 @@ fn fails_login_email_with_wrong_password() {
     create_user(&client, "wrongpasswordemail");
 
     let response = client
-        .post("/login")
+        .post("/auth/login")
         .header(ContentType::JSON)
         .body(r#"{ "identifier": "wrongpasswordemail", "password": "invalid_password" }"#)
         .dispatch();
