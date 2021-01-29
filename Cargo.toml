@@ -1,5 +1,5 @@
 [package]
-name = "profile"
+name = "profile-service"
 version = "0.1.0"
 authors = ["beem"]
 edition = "2018"
@@ -25,6 +25,10 @@ futures = { version = "0.3.7", features = ["thread-pool"] }
 postgres = { version = "0.15", features = ["with-chrono"]  }
 rust-argon2 = "0.8"
 lettre = { version = "0.10.0-alpha.4", features = ["tokio02",  "smtp-transport", "tokio02-native-tls"] }
+openssl = "*"
+openssl-probe = "0.1.2"
+log = "0.4.0"
+env_logger = "0.8.2"
 
 [dev-dependencies]
 lazy_static = "1.4.0"

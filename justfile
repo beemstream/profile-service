@@ -1,12 +1,12 @@
 test:
-    diesel migration redo
+    diesel database reset
     sh .env.test
     cargo test
 run:
-    diesel migration redo
+    diesel database reset
     sh .env
     cargo run
 release:
-    diesel migration redo
+    diesel database reset
     sh .env
     cargo run --release

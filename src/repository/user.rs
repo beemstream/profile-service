@@ -1,6 +1,10 @@
-use crate::{database::DbConn, routes::users_util::get_auth_error_response, util::response::{Error, ErrorType}};
 use crate::models::user::{NewUser, NewUserRequest, User};
 use crate::schema::users;
+use crate::{
+    database::DbConn,
+    routes::users_util::get_auth_error_response,
+    util::response::{Error, ErrorType},
+};
 use rocket::http::Status;
 use rocket_contrib::databases::diesel::{self, prelude::*};
 
@@ -29,21 +33,36 @@ pub async fn is_duplicate_user_or_email(
         let is_found_by_username = has_found_user(found_username);
         let is_found_by_email = has_found_user(found_email);
 
+        let mut errors: Vec<String> = vec![];
+
         if is_found_by_username {
-            Err(Error::error(Some((vec!["username_exists".to_owned()], ErrorType::RequestInvalid)), Status::Conflict))
-        } else if is_found_by_email {
-            Err(Error::error(Some((vec!["email_exists".to_owned()], ErrorType::RequestInvalid)), Status::Conflict))
-        } else {
-            Ok(user)
+            errors.push("username_exists".to_owned());
         }
+
+        if is_found_by_email {
+            errors.push("email_exists".to_owned());
+        }
+
+        if errors.len() > 0 {
+            return Err(Error::error(
+                Some((errors, ErrorType::RequestInvalid)),
+                Status::Conflict,
+            ));
+        }
+
+        Ok(user)
     })
     .await
 }
 
 pub async fn insert(conn: &DbConn, user: NewUser) -> Result<usize, crate::util::response::Error> {
     conn.run(|c| {
-        diesel::insert_into(users::table).values(user).execute(c).map_err(|e| get_auth_error_response(e))
-    }).await
+        diesel::insert_into(users::table)
+            .values(user)
+            .execute(c)
+            .map_err(|e| get_auth_error_response(e))
+    })
+    .await
 }
 
 pub async fn find(conn: &DbConn, identifier: String) -> Result<User, diesel::result::Error> {

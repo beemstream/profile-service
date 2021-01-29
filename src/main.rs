@@ -10,6 +10,8 @@ extern crate rocket_contrib;
 extern crate argon2;
 extern crate chrono;
 extern crate oauth2;
+#[macro_use]
+extern crate log;
 
 mod database;
 mod email_sender;
@@ -52,6 +54,8 @@ fn not_authorized(_req: &Request) {
 
 #[launch]
 fn get_rocket() -> Rocket {
+    openssl_probe::init_ssl_cert_env_vars();
+    env_logger::init();
     let rocket = rocket::ignite();
     let routes: Vec<Route> = routes![
         routes::users::register_user,
@@ -71,7 +75,7 @@ fn get_rocket() -> Rocket {
     };
 
     rocket
-        .mount("/", routes)
+        .mount("/auth", routes)
         .attach(DbConn::fairing())
         .attach(setup_up_cors(&global_config.allowed_origins).unwrap())
         .manage(global_config)

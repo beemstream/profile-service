@@ -83,9 +83,9 @@ fn cannot_create_user_with_not_strong_password() {
     assert_eq!(response.status(), Status::UnprocessableEntity);
     assert_eq!(
         response
-        .into_string()
-        .unwrap()
-        .contains("password_length_invalid"),
+            .into_string()
+            .unwrap()
+            .contains("password_length_invalid"),
         true
     );
 }

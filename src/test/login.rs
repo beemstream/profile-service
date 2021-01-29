@@ -48,7 +48,6 @@ fn fails_login_username_with_wrong_password() {
         .dispatch();
 
     assert_eq!(response.status(), Status::Unauthorized);
-
 }
 
 #[test]
@@ -63,5 +62,4 @@ fn fails_login_email_with_wrong_password() {
         .dispatch();
 
     assert_eq!(response.status(), Status::Unauthorized);
-
 }

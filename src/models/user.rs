@@ -1,4 +1,4 @@
-use crate::{schema::users, util::validator::Validator};
+use crate::{schema::refresh_tokens, schema::users, util::validator::Validator};
 use argon2::{self, hash_encoded, verify_encoded_ext, Config};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
@@ -31,6 +31,13 @@ impl User {
         )
         .unwrap()
     }
+}
+
+#[derive(Queryable, AsChangeset, Serialize, Deserialize)]
+#[table_name = "refresh_tokens"]
+pub struct RefreshToken {
+    pub id: i32,
+    pub expiry: chrono::NaiveDateTime,
 }
 
 #[derive(Deserialize, Validate, Serialize)]

@@ -40,9 +40,7 @@ fn does_not_refreshes_token_with_invalid_token() {
     client
         .post("/login")
         .header(ContentType::JSON)
-        .body(
-            r#"{ "identifier": "refresh_token_incorrect_token", "password": "Ibrahim123123" }"#,
-        )
+        .body(r#"{ "identifier": "refresh_token_incorrect_token", "password": "Ibrahim123123" }"#)
         .dispatch();
 
     let mut request = client.get("/refresh-token").header(ContentType::JSON);
