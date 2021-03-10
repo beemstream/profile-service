@@ -8,14 +8,14 @@ use crate::{
 use rocket::http::Status;
 use rocket_contrib::databases::diesel::{self, prelude::*};
 
-pub fn get_by_username(username: &String, conn: &PgConnection) -> QueryResult<i32> {
+pub fn get_by_username(username: &str, conn: &PgConnection) -> QueryResult<i32> {
     users::table
         .select(users::id)
         .filter(users::username.eq(&username))
         .get_result::<i32>(conn)
 }
 
-pub fn get_by_email(email: &String, conn: &PgConnection) -> QueryResult<i32> {
+pub fn get_by_email(email: &str, conn: &PgConnection) -> QueryResult<i32> {
     users::table
         .select(users::id)
         .filter(users::email.eq(&email))
@@ -65,12 +65,13 @@ pub async fn insert(conn: &DbConn, user: NewUser) -> Result<usize, crate::util::
     .await
 }
 
-pub async fn find(conn: &DbConn, identifier: String) -> Result<User, diesel::result::Error> {
+pub async fn find(conn: &DbConn, identifier: String) -> Result<User, Status> {
     conn.run(move |c| {
         users::table
             .filter(users::email.eq(&identifier))
             .or_filter(users::username.eq(&identifier))
             .get_result::<User>(c)
+            .map_err(|_| Status::NotFound)
     })
     .await
 }

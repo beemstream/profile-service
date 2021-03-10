@@ -52,24 +52,24 @@ fn does_not_refreshes_token_with_invalid_token() {
     assert_eq!(response.status(), Status::Unauthorized);
 }
 
-// #[test]
-// fn does_not_refresh_token_with_expired_token() {
-//     let client = get_client();
-//     create_user(&client, "refresh_token_expired");
+#[test]
+fn system_time_does_not_refresh_token_with_expired_token() {
+    let client = get_client();
+    create_user(&client, "refresh_token_expired");
+    let token_response = client
+        .post("/auth/login")
+        .header(ContentType::JSON)
+        .body(r#"{ "identifier": "refresh_token_expired", "password": "Ibrahim123123" }"#)
+        .dispatch();
 
-//     let token_response = client
-//         .post("/auth/login")
-//         .header(ContentType::JSON)
-//         .body(r#"{ "identifier": "refresh_token_expired", "password": "Ibrahim123123" }"#)
-//         .dispatch();
+    let access_token = get_access_token(&token_response.into_string());
 
-//     let access_token = get_access_token(&token_response.into_string());
-//     let mut request = client.get("/auth/refresh-token").header(ContentType::JSON);
+    let mut request = client.get("/auth/refresh-token").header(ContentType::JSON);
 
-//     request.add_header(Header::new("token", format!("Bearer {}", access_token)));
+    request.add_header(Header::new("token", format!("Bearer {}", access_token)));
 
-//     thread::sleep(time::Duration::from_millis(4000));
-//     let response = request.dispatch();
+    thread::sleep(time::Duration::from_millis(4000));
+    let response = request.dispatch();
 
-//     assert_eq!(response.status(), Status::Unauthorized);
-// }
+    assert_eq!(response.status(), Status::Unauthorized);
+}

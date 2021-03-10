@@ -4,7 +4,6 @@ use rocket::{
 };
 use serde_json::{json, Value};
 use std::{
-    panic,
     sync::{Mutex, MutexGuard},
 };
 

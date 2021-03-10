@@ -58,12 +58,13 @@ fn get_rocket() -> Rocket {
     env_logger::init();
     let rocket = rocket::ignite();
     let routes: Vec<Route> = routes![
-        routes::users::register_user,
-        routes::users::login_user,
-        routes::users::refresh_token,
+        routes::register::register_user,
+        routes::login::login,
+        routes::refresh_token::refresh_token,
         routes::users::authenticate,
         routes::oauth::twitch_auth,
         routes::oauth::twitch_token,
+        routes::profile_lookup::profile_lookup
     ];
 
     let figment = rocket.figment();

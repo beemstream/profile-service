@@ -39,7 +39,7 @@ fn login_user_successfully_with_email() {
 #[test]
 fn fails_login_username_with_wrong_password() {
     let client = get_client();
-    create_user(&client, "wrongpassword");
+    create_user(&client, "wrongpasswordusername");
 
     let response = client
         .post("/auth/login")

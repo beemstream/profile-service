@@ -7,7 +7,8 @@ use rocket::{
 
 use super::globals::{GlobalConfig, JWTConfig};
 
-pub struct AccessToken(String);
+#[derive(Debug)]
+pub struct AccessToken(pub String);
 
 #[derive(Debug)]
 pub enum AccessTokenError {
@@ -18,7 +19,7 @@ pub enum AccessTokenError {
 pub async fn is_token_valid(
     conn: &DbConn,
     token: &str,
-    secret_key: &String,
+    secret_key: &str,
     validation: &Validation,
 ) -> bool {
     let decode_key = DecodingKey::from_secret(secret_key.as_ref());

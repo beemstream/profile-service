@@ -1,4 +1,7 @@
-use crate::{schema::refresh_tokens, schema::users, util::validator::Validator};
+use crate::{
+    schema::{refresh_tokens, users},
+    util::validator::Validator,
+};
 use argon2::{self, hash_encoded, verify_encoded_ext, Config};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
@@ -9,7 +12,7 @@ pub enum UserType<'a> {
     StoredUser(&'a User),
 }
 
-#[derive(Queryable, AsChangeset, Serialize, Deserialize)]
+#[derive(Identifiable, Queryable, AsChangeset, Serialize, Deserialize, Debug, PartialEq)]
 #[table_name = "users"]
 pub struct User {
     pub id: i32,
@@ -22,7 +25,7 @@ pub struct User {
 }
 
 impl User {
-    pub fn verify(&self, non_hashed: &str, secret_key: &String) -> bool {
+    pub fn verify(&self, non_hashed: &str, secret_key: &str) -> bool {
         verify_encoded_ext(
             &self.password,
             non_hashed.as_bytes(),
@@ -31,13 +34,6 @@ impl User {
         )
         .unwrap()
     }
-}
-
-#[derive(Queryable, AsChangeset, Serialize, Deserialize)]
-#[table_name = "refresh_tokens"]
-pub struct RefreshToken {
-    pub id: i32,
-    pub expiry: chrono::NaiveDateTime,
 }
 
 #[derive(Deserialize, Validate, Serialize)]
@@ -65,7 +61,7 @@ pub struct NewUser {
 }
 
 impl NewUser {
-    fn hash_password(password: String, secret_key: &String) -> String {
+    fn hash_password(password: String, secret_key: &str) -> String {
         let config = Config {
             secret: secret_key.as_bytes(),
             ..Config::default()
@@ -76,7 +72,7 @@ impl NewUser {
         hash
     }
 
-    pub fn from(new_user_request: NewUserRequest, secret_key: &String) -> Self {
+    pub fn from(new_user_request: NewUserRequest, secret_key: &str) -> Self {
         Self {
             username: new_user_request.username.to_owned().unwrap(),
             email: new_user_request.email.to_owned().unwrap(),
@@ -90,6 +86,23 @@ impl NewUser {
 
 impl Validator for NewUserRequest {}
 
+#[derive(Identifiable, Queryable, Serialize, Deserialize, Associations, Debug, PartialEq)]
+#[belongs_to(User, foreign_key = "user_id")]
+#[table_name = "refresh_tokens"]
+pub struct RefreshToken {
+    pub id: i32,
+    pub token: String,
+    pub expiry: chrono::NaiveDateTime,
+    pub user_id: i32,
+}
+
+#[derive(Insertable, Serialize, Deserialize)]
+#[table_name = "refresh_tokens"]
+pub struct NewRefreshToken {
+    pub token: String,
+    pub expiry: chrono::NaiveDateTime,
+    pub user_id: i32,
+}
 #[derive(Debug, Deserialize, Serialize, Validate)]
 pub struct LoginUser {
     #[validate(required)]

@@ -1,7 +1,7 @@
 use crate::{
     database::DbConn,
     jwt::{generate_header, Claims},
-    models::user::{User, UserType},
+    models::user::{NewRefreshToken, User, UserType},
     util::response::{ErrorResponse, ErrorType},
 };
 use crate::{
@@ -12,9 +12,9 @@ use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, TokenData, Validati
 use rocket::http::{Cookie, CookieJar, Status};
 use rocket_contrib::databases::diesel::result::{DatabaseErrorInformation, Error};
 
-pub fn get_new_token(user_type: &UserType, duration: i64, secret_key: &String) -> (Claims, String) {
+pub fn get_new_token(user_type: &UserType, duration: i64, secret_key: &str) -> (Claims, String) {
     let claims = match user_type {
-        UserType::LoginUser(u) => Claims::new(u.identifier.clone().unwrap().as_ref(), duration),
+        UserType::LoginUser(u) => Claims::new(&u.identifier.clone().unwrap(), duration),
         UserType::StoredUser(u) => Claims::new(&u.username, duration),
     };
     let encode_key = EncodingKey::from_secret(secret_key.as_ref());
@@ -22,7 +22,7 @@ pub fn get_new_token(user_type: &UserType, duration: i64, secret_key: &String) -
     (claims, new_token)
 }
 
-pub fn get_exp_time(claims: Claims) -> time::Duration {
+pub fn get_exp_time(claims: &Claims) -> time::Duration {
     let exp_datetime = time::OffsetDateTime::from_unix_timestamp(claims.exp as i64);
     let time_now = time::OffsetDateTime::now_utc();
 
@@ -42,57 +42,63 @@ pub fn get_cookie_with_expiry_and_max_age<'a>(
         .finish()
 }
 
-pub fn verify_non_hashed_password(user: User, password: &str, secret_key: &String) -> Option<bool> {
-    bool_as_option(user.verify(password, secret_key))
+pub fn verify_non_hashed_password(user: &User, password: &str, secret_key: &str) -> bool {
+    user.verify(password, secret_key)
 }
 
 pub fn add_refresh_cookie<'a>(
     user: UserType<'a>,
     cookie: &CookieJar,
-    refresh_token_expiry: i64,
-    secret_key: &String,
-) -> Option<UserType<'a>> {
-    let (refresh_claims, refresh_token) = get_new_token(&user, refresh_token_expiry, secret_key);
-    let refresh_exp = get_exp_time(refresh_claims);
+    claims: &Claims,
+    refresh_token: &str,
+    exp_time: i64,
+) -> UserType<'a> {
+    let refresh_exp = get_exp_time(&claims);
     cookie.add_private(get_cookie_with_expiry_and_max_age(
         refresh_exp,
-        refresh_token,
-        refresh_token_expiry,
+        refresh_token.to_string(),
+        exp_time,
     ));
-    Some(user)
+    user
 }
 
 pub fn add_token_response<'a>(
     user: UserType<'a>,
     token_expiry: i64,
-    secret_key: &String,
+    secret_key: &str,
 ) -> Option<(TokenResponse, Status)> {
     let (claims, token) = get_new_token(&user, token_expiry, secret_key);
-    let token_exp = get_exp_time(claims);
+    let token_exp = get_exp_time(&claims);
     Some((
         TokenResponse::success(token, token_exp.whole_seconds()),
         Status::Ok,
     ))
 }
 
+pub fn get_jwt_claim<'a>(
+    value: &'a str,
+    secret_key: &str,
+    validation: &Validation,
+) -> Result<TokenData<Claims>, jsonwebtoken::errors::Error> {
+    let decode_key = DecodingKey::from_secret(secret_key.as_ref());
+    decode::<Claims>(value, &decode_key, validation)
+}
+
 pub fn verify_jwt(
     cookie: &Cookie,
-    secret_key: &String,
+    secret_key: &str,
     validation: &Validation,
 ) -> Option<TokenData<Claims>> {
-    let decode_key = DecodingKey::from_secret(secret_key.as_ref());
-    decode::<Claims>(cookie.value(), &decode_key, validation).ok()
+    get_jwt_claim(cookie.value(), secret_key, validation).ok()
 }
 
-pub async fn verify_username(conn: &DbConn, token_data: TokenData<Claims>) -> Option<User> {
-    find(&conn, token_data.claims.sub().to_owned()).await.ok()
-}
-
-pub fn bool_as_option(is_verified: bool) -> Option<bool> {
-    match is_verified {
-        true => Some(true),
-        false => None,
-    }
+pub async fn verify_username(
+    conn: &DbConn,
+    token_data: TokenData<Claims>,
+) -> Result<User, crate::util::response::Error> {
+    find(&conn, token_data.claims.sub().to_owned())
+        .await
+        .map_err(|_| crate::util::response::Error::Error(Status::Unauthorized))
 }
 
 pub fn get_internal_error_response() -> crate::util::response::Error {
@@ -112,11 +118,44 @@ pub fn get_database_error_response(
 
 pub fn get_auth_error_response(error: Error) -> crate::util::response::Error {
     match error {
-        Error::DatabaseError(_, db_error) => get_database_error_response(db_error),
+        Error::DatabaseError(_, db_error) => {
+            info!("db error {:?}", db_error);
+            get_database_error_response(db_error)
+        }
         _ => get_internal_error_response(),
     }
 }
 
-pub fn update_refresh_token_cache(user: &User) -> Option<&User> {
-    Some(user)
+pub async fn generate_and_store_refresh_token<'a>(
+    user: &User,
+    refresh_token_expiry: i64,
+    auth_secret_key: &str,
+    cookie: &'a CookieJar<'a>,
+    conn: &DbConn,
+) -> Result<(), crate::util::response::Error> {
+    let (refresh_claims, refresh_token) = get_new_token(
+        &UserType::StoredUser(user),
+        refresh_token_expiry,
+        auth_secret_key,
+    );
+    add_refresh_cookie(
+        UserType::StoredUser(user),
+        cookie,
+        &refresh_claims,
+        &refresh_token,
+        refresh_token_expiry,
+    );
+
+    let user_id = user.id;
+    crate::repository::refresh_token::insert(
+        conn,
+        NewRefreshToken {
+            user_id: user_id.clone(),
+            token: refresh_token,
+            expiry: chrono::Utc::now().naive_utc()
+                + chrono::Duration::seconds(refresh_claims.exp as i64),
+        },
+    )
+    .await?;
+    Ok(())
 }
