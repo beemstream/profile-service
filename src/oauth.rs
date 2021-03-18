@@ -24,7 +24,7 @@ pub fn twitch_authenticate(
 }
 
 pub fn twitch_exchange_code(
-    auth_code: &str,
+    auth_code: String,
     client_id: String,
     client_secret: String,
     callback_url: String,
@@ -37,6 +37,18 @@ pub fn twitch_exchange_code(
         .request(http_client);
 
     c
+}
+
+pub fn twitch_refresh_access_token(
+    refresh_token: String,
+    client_id: String,
+    client_secret: String,
+    callback_url: String,
+) -> Result<TwitchTokenResponse<TwitchFields, BasicTokenType>, RequestTokenError<HttpClientError, BasicErrorResponse>> {
+    let client =
+        twitch_client(client_id, client_secret, callback_url).set_auth_type(AuthType::RequestBody);
+
+    client.exchange_refresh_token(&RefreshToken::new(refresh_token)).request(http_client)
 }
 
 pub fn twitch_client(
@@ -64,7 +76,7 @@ pub type TwitchOauthClient =
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct TwitchFields {
-    id_token: String,
+    id_token: Option<String>,
 }
 
 impl ExtraTokenFields for TwitchFields {}
@@ -81,7 +93,6 @@ pub struct TwitchTokenResponse<EF: ExtraTokenFields, TT: TokenType> {
     refresh_token: Option<RefreshToken>,
     #[serde(rename = "scope")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(default)]
     scopes: Option<Vec<Scope>>,
 
     #[serde(bound = "EF: ExtraTokenFields")]

@@ -16,6 +16,7 @@ use serde::Serialize;
 
 #[derive(Debug, Serialize)]
 pub struct UserLookUpResponse {
+    id: i32,
     username: String,
     email: String,
 }
@@ -23,6 +24,7 @@ pub struct UserLookUpResponse {
 impl UserLookUpResponse {
     pub fn from(user: User) -> Self {
         Self {
+            id: user.id,
             username: user.username,
             email: user.email,
         }
