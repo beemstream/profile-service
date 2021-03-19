@@ -19,7 +19,7 @@ pub fn twitch_authenticate(
     let client = twitch_client(client_id, client_secret, callback_url);
     client
         .authorize_url(CsrfToken::new_random)
-        .add_scope(Scope::new("openid user:read:email".to_string()))
+        .add_scope(Scope::new("openid user:read:email channel:manage:broadcast".to_string()))
         .url()
 }
 
