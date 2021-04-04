@@ -56,6 +56,10 @@ impl Error {
     pub fn error_with_body(json: ErrorResponse, status: Status) -> Self {
         Self::ErrorWithBody(JsonResponse::new(json, status))
     }
+
+    pub fn unauthorized() -> Self {
+        Error::Error(Status::Unauthorized)
+    }
 }
 
 impl<'r> Responder<'r, 'static> for Error {

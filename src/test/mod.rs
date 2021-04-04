@@ -3,9 +3,7 @@ use rocket::{
     local::blocking::{Client, LocalResponse},
 };
 use serde_json::{json, Value};
-use std::{
-    sync::{Mutex, MutexGuard},
-};
+use std::sync::{Mutex, MutexGuard};
 
 mod authenticate;
 mod login;

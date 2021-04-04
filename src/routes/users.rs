@@ -1,4 +1,4 @@
-use rocket::http::Status;
+use rocket::{get, http::Status};
 
 use crate::util::authorization::AccessToken;
 

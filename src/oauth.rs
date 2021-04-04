@@ -19,7 +19,9 @@ pub fn twitch_authenticate(
     let client = twitch_client(client_id, client_secret, callback_url);
     client
         .authorize_url(CsrfToken::new_random)
-        .add_scope(Scope::new("openid user:read:email channel:manage:broadcast".to_string()))
+        .add_scope(Scope::new(
+            "openid user:read:email channel:manage:broadcast".to_string(),
+        ))
         .url()
 }
 
@@ -44,11 +46,16 @@ pub fn twitch_refresh_access_token(
     client_id: String,
     client_secret: String,
     callback_url: String,
-) -> Result<TwitchTokenResponse<TwitchFields, BasicTokenType>, RequestTokenError<HttpClientError, BasicErrorResponse>> {
+) -> Result<
+    TwitchTokenResponse<TwitchFields, BasicTokenType>,
+    RequestTokenError<HttpClientError, BasicErrorResponse>,
+> {
     let client =
         twitch_client(client_id, client_secret, callback_url).set_auth_type(AuthType::RequestBody);
 
-    client.exchange_refresh_token(&RefreshToken::new(refresh_token)).request(http_client)
+    client
+        .exchange_refresh_token(&RefreshToken::new(refresh_token))
+        .request(http_client)
 }
 
 pub fn twitch_client(

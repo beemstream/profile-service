@@ -6,6 +6,7 @@ use rocket::{
 };
 
 use super::globals::{GlobalConfig, JWTConfig};
+use async_trait::async_trait;
 
 #[derive(Debug)]
 pub struct AccessToken(pub String);

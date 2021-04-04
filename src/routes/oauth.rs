@@ -6,7 +6,7 @@ use crate::{
         response::{Error, Response, TokenResponse},
     },
 };
-use rocket::{http::CookieJar, response::Redirect};
+use rocket::{get, http::CookieJar, info, post, response::Redirect};
 use rocket::{
     http::{Cookie, Status},
     State,
@@ -18,7 +18,7 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "snake_case")]
 pub enum GrantType {
     RefreshToken,
-    Code
+    Code,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -26,7 +26,6 @@ pub struct TwitchGrant {
     code: Option<String>,
     grant_type: GrantType,
 }
-
 
 #[get("/oauth/twitch")]
 pub fn twitch_auth(twitch_config: State<'_, TwitchConfig>) -> Redirect {
@@ -74,7 +73,7 @@ pub fn extract_refresh_token(refresh_token: Option<Cookie>) -> Result<String, Er
 
             Ok(parsed_token.unwrap().to_string())
         }
-        None => return Err(Error::Error(Status::Unauthorized))
+        None => return Err(Error::Error(Status::Unauthorized)),
     }
 }
 
@@ -115,9 +114,10 @@ pub fn twitch_token<'a>(
 ) -> Result<Response<TokenResponse>, Error> {
     let twitch_grant_inner = twitch_grant.into_inner();
     match twitch_grant_inner.grant_type {
-        GrantType::Code if twitch_grant_inner.code.is_some() => handle_grant(&twitch_grant_inner.code.unwrap(), cookies, twitch_config),
+        GrantType::Code if twitch_grant_inner.code.is_some() => {
+            handle_grant(&twitch_grant_inner.code.unwrap(), cookies, twitch_config)
+        }
         GrantType::RefreshToken => handle_refresh(cookies, twitch_config),
-        _ => Err(Error::Error(Status::Unauthorized))
+        _ => Err(Error::Error(Status::Unauthorized)),
     }
-
 }

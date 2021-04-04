@@ -1,5 +1,6 @@
-use crate::oauth::{ExchangeError, twitch_exchange_code, twitch_refresh_access_token};
+use crate::oauth::{twitch_exchange_code, twitch_refresh_access_token, ExchangeError};
 use oauth2::TokenResponse;
+use rocket::debug;
 use std::time::Duration;
 
 pub type RefreshToken = String;

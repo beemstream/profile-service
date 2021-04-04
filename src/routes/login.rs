@@ -1,6 +1,6 @@
 use rocket::{
     http::{CookieJar, Status},
-    State,
+    post, State,
 };
 use rocket_contrib::json::Json;
 
@@ -30,7 +30,7 @@ pub async fn login<'a>(
 
     user.validate_model()?;
 
-    let user = find(&conn, user.identifier.clone().unwrap().clone())
+    let user = find(&conn, user.identifier.clone().unwrap())
         .await
         .map_err(|_| Error::Error(Status::Unauthorized))
         .and_then(|found_user| {
@@ -41,7 +41,7 @@ pub async fn login<'a>(
             );
 
             match password_verify {
-                false => Err(Error::Error(Status::Unauthorized)),
+                false => Err(Error::unauthorized()),
                 true => Ok(found_user),
             }
         })?;

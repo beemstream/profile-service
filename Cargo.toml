@@ -7,14 +7,12 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rocket = { git = "https://github.com/SergioBenitez/Rocket.git", branch = "master", features = ["secrets"] }
-rocket_contrib = { git = "https://github.com/SergioBenitez/Rocket.git", branch = "master", features = ["json", "diesel_postgres_pool"] }
-rocket_codegen = { git = "https://github.com/SergioBenitez/Rocket.git" , branch = "master"}
+rocket = { git = "https://github.com/SergioBenitez/Rocket.git", version = "0.5.0-dev", features = ["secrets"] }
+rocket_contrib = { git = "https://github.com/SergioBenitez/Rocket.git", version = "0.5.0-dev", features = ["json", "diesel_postgres_pool"] }
 rocket_cors = { git = "https://github.com/lawliet89/rocket_cors.git", branch = "master" }
 chrono = { version = "0.4", features = ["serde"] }
 diesel = { version = "1.4", features = ["postgres", "chrono"] }
 serde = { version = "1.0", features = ["derive"]}
-serde_json = "1.0"
 validator = { version = "0.12", features = ["derive"] }
 jsonwebtoken = "7"
 time = "0.2"
@@ -27,8 +25,7 @@ rust-argon2 = "0.8"
 lettre = { version = "0.10.0-alpha.4", features = ["tokio02",  "smtp-transport", "tokio02-native-tls"] }
 openssl = "*"
 openssl-probe = "0.1.2"
-log = "0.4.0"
-env_logger = "0.8.2"
 
 [dev-dependencies]
 lazy_static = "1.4.0"
+serde_json = "1.0"

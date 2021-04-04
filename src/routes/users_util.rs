@@ -9,7 +9,10 @@ use crate::{
     util::{globals::COOKIE_REFRESH_TOKEN_NAME, response::TokenResponse},
 };
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, TokenData, Validation};
-use rocket::http::{Cookie, CookieJar, Status};
+use rocket::{
+    http::{Cookie, CookieJar, Status},
+    info,
+};
 use rocket_contrib::databases::diesel::result::{DatabaseErrorInformation, Error};
 
 pub fn get_new_token(user_type: &UserType, duration: i64, secret_key: &str) -> (Claims, String) {

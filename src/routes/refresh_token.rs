@@ -1,6 +1,7 @@
 use rocket::{
+    get,
     http::{CookieJar, Status},
-    State,
+    info, State,
 };
 
 use crate::{

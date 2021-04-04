@@ -1,7 +1,7 @@
 use crate::models::user::{NewRefreshToken, RefreshToken};
 use crate::schema::refresh_tokens;
 use crate::{database::DbConn, routes::users_util::get_auth_error_response};
-use rocket::http::Status;
+use rocket::{http::Status, info};
 use rocket_contrib::databases::diesel::{self, prelude::*};
 
 pub async fn insert(

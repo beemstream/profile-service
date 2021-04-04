@@ -1,4 +1,4 @@
-use rocket::{http::Status, State};
+use rocket::{get, http::Status, State};
 use rocket_contrib::json::Json;
 
 use crate::{
