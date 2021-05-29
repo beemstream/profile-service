@@ -53,7 +53,7 @@ pub async fn refresh_token<'a>(
         &jwt_config.validation,
     ) {
         Some(v) => v,
-        None => return Err(Error::Error(Status::Unauthorized)),
+        None => return Err(Error::unauthorized()),
     };
 
     let user = verify_username(&conn, verified_token).await?;

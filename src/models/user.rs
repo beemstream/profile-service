@@ -12,7 +12,7 @@ pub enum UserType<'a> {
     StoredUser(&'a User),
 }
 
-#[derive(Identifiable, Queryable, AsChangeset, Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Identifiable, Queryable, AsChangeset, Serialize, Deserialize, Debug, PartialEq, Clone)]
 #[table_name = "users"]
 pub struct User {
     pub id: i32,

@@ -24,7 +24,7 @@ pub async fn is_token_valid(
     validation: &Validation,
 ) -> bool {
     let decode_key = DecodingKey::from_secret(secret_key.as_ref());
-    let request_token: Vec<&str> = token.split(" ").collect();
+    let request_token: Vec<&str> = token.split(' ').collect();
 
     match request_token.starts_with(&["Bearer"]) {
         true => match decode::<Claims>(request_token[1], &decode_key, validation) {

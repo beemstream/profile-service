@@ -53,6 +53,7 @@ fn does_not_refreshes_token_with_invalid_token() {
 }
 
 #[test]
+#[ignore]
 fn system_time_does_not_refresh_token_with_expired_token() {
     let client = get_client();
     create_user(&client, "refresh_token_expired");

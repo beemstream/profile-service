@@ -65,8 +65,8 @@ pub fn add_refresh_cookie<'a>(
     user
 }
 
-pub fn add_token_response<'a>(
-    user: UserType<'a>,
+pub fn add_token_response(
+    user: UserType<'_>,
     token_expiry: i64,
     secret_key: &str,
 ) -> Option<(TokenResponse, Status)> {
@@ -153,7 +153,7 @@ pub async fn generate_and_store_refresh_token<'a>(
     crate::repository::refresh_token::insert(
         conn,
         NewRefreshToken {
-            user_id: user_id.clone(),
+            user_id,
             token: refresh_token,
             expiry: chrono::Utc::now().naive_utc()
                 + chrono::Duration::seconds(refresh_claims.exp as i64),

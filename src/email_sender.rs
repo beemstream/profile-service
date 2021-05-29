@@ -3,7 +3,7 @@ use lettre::{
     AsyncSmtpTransport, Message, Tokio02Connector, Tokio02Transport,
 };
 
-pub async fn send_email(to: &str) {
+pub async fn send_email(to: String, email_username: String, email_password: String) {
     let email = Message::builder()
         .from(
             "Ibrahim Mahmood <ibrahimpmahmood@gmail.com>"
@@ -18,10 +18,7 @@ pub async fn send_email(to: &str) {
     let async_mailer: AsyncSmtpTransport<Tokio02Connector> =
         AsyncSmtpTransport::<Tokio02Connector>::starttls_relay("smtp.gmail.com")
             .unwrap()
-            .credentials(Credentials::new(
-                "ibrahimpmahmood@gmail.com".to_owned(),
-                "xuxncuoalekycnua".to_owned(),
-            ))
+            .credentials(Credentials::new(email_username, email_password))
             .authentication(vec![Mechanism::Plain])
             .build();
 

@@ -39,6 +39,7 @@ fn does_not_authenticates_token() {
 }
 
 #[test]
+#[ignore]
 fn system_time_does_not_authenticate_token_when_expired() {
     let client = get_client();
     create_user(&client, "expire_auth");

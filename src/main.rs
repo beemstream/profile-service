@@ -22,10 +22,10 @@ use rocket::{
     launch, routes, Request, Rocket, Route,
 };
 use rocket_cors::{AllowedOrigins, Error};
-use util::globals::{GlobalConfig, JWTConfig, TwitchConfig};
+use util::globals::{EmailConfig, GlobalConfig, JWTConfig, TwitchConfig};
 
-fn setup_up_cors(origins: &Vec<String>) -> Result<rocket_cors::Cors, Error> {
-    let allowed_origins = AllowedOrigins::some_exact(origins.as_slice());
+fn setup_up_cors(origins: &[String]) -> Result<rocket_cors::Cors, Error> {
+    let allowed_origins = AllowedOrigins::some_exact(origins);
 
     rocket_cors::CorsOptions {
         allowed_origins,
@@ -59,6 +59,7 @@ fn get_rocket() -> Rocket {
 
     let global_config: GlobalConfig = figment.extract().expect("global config");
     let twitch_config: TwitchConfig = figment.extract().expect("twitch config");
+    let email_config: EmailConfig = figment.extract().expect("email config");
     let jwt = JWTConfig {
         validation: jwt_validation(),
     };
@@ -68,7 +69,8 @@ fn get_rocket() -> Rocket {
         .attach(DbConn::fairing())
         .attach(setup_up_cors(&global_config.allowed_origins).unwrap())
         .manage(global_config)
-        .manage(jwt)
         .manage(twitch_config)
+        .manage(email_config)
+        .manage(jwt)
         .register(catchers![not_authorized])
 }

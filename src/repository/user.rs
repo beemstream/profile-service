@@ -55,11 +55,11 @@ pub async fn is_duplicate_user_or_email(
     .await
 }
 
-pub async fn insert(conn: &DbConn, user: NewUser) -> Result<usize, crate::util::response::Error> {
+pub async fn insert(conn: &DbConn, user: NewUser) -> Result<User, crate::util::response::Error> {
     conn.run(|c| {
         diesel::insert_into(users::table)
             .values(user)
-            .execute(c)
+            .get_result::<User>(c)
             .map_err(|e| get_auth_error_response(e))
     })
     .await

@@ -22,4 +22,11 @@ pub struct TwitchConfig {
     pub twitch_callback_url: String,
 }
 
+#[derive(Deserialize)]
+pub struct EmailConfig {
+    pub email_username: String,
+    pub email_password: String,
+    pub email_enabled: bool,
+}
+
 pub const COOKIE_REFRESH_TOKEN_NAME: &str = "refresh_token";
