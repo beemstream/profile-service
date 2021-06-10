@@ -6,12 +6,11 @@ use crate::{
         response::{Error, Response, TokenResponse},
     },
 };
-use rocket::{get, http::CookieJar, info, post, response::Redirect};
+use rocket::{get, http::CookieJar, info, post, response::Redirect, serde::json::Json};
 use rocket::{
     http::{Cookie, Status},
     State,
 };
-use rocket_contrib::json::Json;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
@@ -28,7 +27,7 @@ pub struct TwitchGrant {
 }
 
 #[get("/oauth/twitch")]
-pub fn twitch_auth(twitch_config: State<'_, TwitchConfig>) -> Redirect {
+pub fn twitch_auth(twitch_config: &State<TwitchConfig>) -> Redirect {
     info!("redirecting to: {}", twitch_config.twitch_callback_url);
 
     let (auth_url, _) = twitch_authenticate(
@@ -42,7 +41,7 @@ pub fn twitch_auth(twitch_config: State<'_, TwitchConfig>) -> Redirect {
 fn handle_grant<'a>(
     code: &str,
     cookies: &CookieJar<'a>,
-    twitch_config: State<'a, TwitchConfig>,
+    twitch_config: &State<TwitchConfig>,
 ) -> Result<Response<TokenResponse>, Error> {
     match get_oauth_response(
         code.to_string(),
@@ -61,7 +60,10 @@ fn handle_grant<'a>(
                 Status::Ok,
             ))
         }
-        Err(_) => Err(Error::Error(Status::Unauthorized)),
+        Err(e) => {
+            info!("failed to authenticated {:?}", e);
+            Err(Error::Error(Status::Unauthorized))
+        }
     }
 }
 
@@ -79,7 +81,7 @@ pub fn extract_refresh_token(refresh_token: Option<Cookie>) -> Result<String, Er
 
 fn handle_refresh<'a>(
     cookies: &CookieJar<'a>,
-    twitch_config: State<'a, TwitchConfig>,
+    twitch_config: &State<TwitchConfig>,
 ) -> Result<Response<TokenResponse>, Error> {
     info!("handling refresh token");
     let refresh_cookie = cookies.get_private("refresh_token");
@@ -110,7 +112,7 @@ fn handle_refresh<'a>(
 pub fn twitch_token<'a>(
     twitch_grant: Json<TwitchGrant>,
     cookies: &CookieJar<'a>,
-    twitch_config: State<'a, TwitchConfig>,
+    twitch_config: &State<TwitchConfig>,
 ) -> Result<Response<TokenResponse>, Error> {
     let twitch_grant_inner = twitch_grant.into_inner();
     match twitch_grant_inner.grant_type {

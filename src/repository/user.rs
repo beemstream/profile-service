@@ -6,7 +6,7 @@ use crate::{
     util::response::{Error, ErrorType},
 };
 use rocket::http::Status;
-use rocket_contrib::databases::diesel::{self, prelude::*};
+use rocket_sync_db_pools::diesel::{self, prelude::*};
 
 pub fn get_by_username(username: &str, conn: &PgConnection) -> QueryResult<i32> {
     users::table

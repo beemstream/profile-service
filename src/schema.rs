@@ -21,4 +21,7 @@ table! {
 
 joinable!(refresh_tokens -> users (user_id));
 
-allow_tables_to_appear_in_same_query!(refresh_tokens, users,);
+allow_tables_to_appear_in_same_query!(
+    refresh_tokens,
+    users,
+);

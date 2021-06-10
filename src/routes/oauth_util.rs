@@ -1,6 +1,6 @@
 use crate::oauth::{twitch_exchange_code, twitch_refresh_access_token, ExchangeError};
 use oauth2::TokenResponse;
-use rocket::debug;
+use rocket::{debug, info};
 use std::time::Duration;
 
 pub type RefreshToken = String;
@@ -14,6 +14,7 @@ pub fn get_oauth_response<'a>(
 ) -> Result<OAuthSuccessResponse, ExchangeError> {
     match twitch_exchange_code(code_grant, client_id, client_secret, callback_url) {
         Ok(exchange_response) => {
+            info!("got exchange {:?}", exchange_response);
             let access_token = exchange_response.access_token().secret().to_owned();
             let refresh_token = exchange_response
                 .refresh_token()

@@ -1,8 +1,4 @@
-use rocket::{
-    http::{CookieJar, Status},
-    post, State,
-};
-use rocket_contrib::json::Json;
+use rocket::{State, http::{CookieJar, Status}, post, serde::json::Json};
 
 use crate::{
     database::DbConn,
@@ -24,7 +20,7 @@ pub async fn login<'a>(
     conn: DbConn,
     user: Json<LoginUser>,
     cookies: &CookieJar<'a>,
-    global_config: State<'a, GlobalConfig>,
+    global_config: &State<GlobalConfig>,
 ) -> Result<Response<TokenResponse>, Error> {
     let user: LoginUser = user.into_inner();
 

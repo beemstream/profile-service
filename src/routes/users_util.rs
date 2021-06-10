@@ -13,7 +13,7 @@ use rocket::{
     http::{Cookie, CookieJar, Status},
     info,
 };
-use rocket_contrib::databases::diesel::result::{DatabaseErrorInformation, Error};
+use rocket_sync_db_pools::diesel::result::{DatabaseErrorInformation, Error};
 
 pub fn get_new_token(user_type: &UserType, duration: i64, secret_key: &str) -> (Claims, String) {
     let claims = match user_type {

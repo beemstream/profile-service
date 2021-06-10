@@ -37,7 +37,6 @@ pub fn twitch_exchange_code(
     let c: Result<ExchangeSuccess, RequestTokenError<HttpClientError, BasicErrorResponse>> = client
         .exchange_code(AuthorizationCode::new(auth_code.to_string()))
         .request(http_client);
-
     c
 }
 

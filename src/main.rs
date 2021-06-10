@@ -16,11 +16,7 @@ mod test;
 
 use database::DbConn;
 use jwt::jwt_validation;
-use rocket::{
-    catch, catchers,
-    http::Method::{Get, Post},
-    launch, routes, Request, Rocket, Route,
-};
+use rocket::{Build, Request, Rocket, Route, catch, catchers, http::Method::{Get, Post}, launch, routes};
 use rocket_cors::{AllowedOrigins, Error};
 use util::globals::{EmailConfig, GlobalConfig, JWTConfig, TwitchConfig};
 
@@ -42,9 +38,8 @@ fn not_authorized(_req: &Request) {
 }
 
 #[launch]
-fn get_rocket() -> Rocket {
-    openssl_probe::init_ssl_cert_env_vars();
-    let rocket = rocket::ignite();
+fn get_rocket() -> Rocket<Build> {
+    let rocket = rocket::build();
     let routes: Vec<Route> = routes![
         routes::register::register_user,
         routes::login::login,
@@ -72,5 +67,5 @@ fn get_rocket() -> Rocket {
         .manage(twitch_config)
         .manage(email_config)
         .manage(jwt)
-        .register(catchers![not_authorized])
+        .register("/", catchers![not_authorized])
 }

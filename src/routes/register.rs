@@ -1,6 +1,5 @@
 use futures::TryFutureExt;
-use rocket::{http::Status, post, State};
-use rocket_contrib::json::Json;
+use rocket::{State, http::Status, post, serde::json::Json};
 
 use crate::{
     database::DbConn,
@@ -18,8 +17,8 @@ use crate::{
 pub async fn register_user(
     conn: DbConn,
     user: Json<NewUserRequest>,
-    global_config: State<'_, GlobalConfig>,
-    email_config: State<'_, EmailConfig>,
+    global_config: &State<GlobalConfig>,
+    email_config: &State<EmailConfig>,
 ) -> Result<Status, Error> {
     let user_request = user.into_inner();
 

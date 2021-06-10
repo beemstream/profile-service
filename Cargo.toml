@@ -7,9 +7,9 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rocket = { git = "https://github.com/SergioBenitez/Rocket.git", version = "0.5.0-dev", features = ["secrets"] }
-rocket_contrib = { git = "https://github.com/SergioBenitez/Rocket.git", version = "0.5.0-dev", features = ["json", "diesel_postgres_pool"] }
+rocket = { version = "0.5.0-rc.1", features = ["secrets", "json"] }
 rocket_cors = { git = "https://github.com/lawliet89/rocket_cors.git", branch = "master" }
+rocket_sync_db_pools = { version = "0.1.0-rc.1", features = ["diesel_postgres_pool"] }
 chrono = { version = "0.4", features = ["serde"] }
 diesel = { version = "1.4", features = ["postgres", "chrono"] }
 serde = { version = "1.0", features = ["derive"]}

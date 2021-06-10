@@ -23,8 +23,8 @@ pub async fn refresh_token<'a>(
     conn: DbConn,
     cookie: &'a CookieJar<'a>,
     _access_token: AccessToken,
-    global_config: State<'a, GlobalConfig>,
-    jwt_config: State<'a, JWTConfig>,
+    global_config: &State<GlobalConfig>,
+    jwt_config: &State<JWTConfig>,
 ) -> Result<Response<TokenResponse>, Error> {
     let refresh_token = cookie.get_private(COOKIE_REFRESH_TOKEN_NAME);
 
