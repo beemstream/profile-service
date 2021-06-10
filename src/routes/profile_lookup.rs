@@ -1,4 +1,4 @@
-use rocket::{State, get, http::Status, serde::json::Json};
+use rocket::{get, http::Status, serde::json::Json, State};
 
 use crate::{
     database::DbConn,
@@ -38,7 +38,7 @@ pub async fn profile_lookup<'a>(
     jwt_config: &State<JWTConfig>,
 ) -> Result<Json<UserLookUpResponse>, Status> {
     let AccessToken(token) = access_token;
-    let request_token: Vec<&str> = token.split(" ").collect();
+    let request_token: Vec<&str> = token.split(' ').collect();
 
     let token_claim = get_jwt_claim(
         request_token[1],

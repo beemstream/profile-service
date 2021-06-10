@@ -10,7 +10,7 @@ pub struct Claims {
     nbf: usize,
 }
 
-const ISSUER: &'static str = "beemstream";
+const ISSUER: &str = "beemstream";
 
 impl Claims {
     pub fn new(identifier: &str, refresh_interval: i64) -> Claims {

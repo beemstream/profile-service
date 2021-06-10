@@ -12,7 +12,7 @@ pub async fn insert(
         diesel::insert_into(refresh_tokens::table)
             .values(refresh_token)
             .execute(c)
-            .map_err(|e| get_auth_error_response(e))
+            .map_err(get_auth_error_response)
     })
     .await
 }
@@ -44,7 +44,7 @@ pub async fn delete(conn: &DbConn, id: i32) -> Result<usize, crate::util::respon
         let token_id = refresh_tokens::table.filter(refresh_tokens::id.eq(id));
         diesel::delete(token_id)
             .execute(c)
-            .map_err(|e| get_auth_error_response(e))
+            .map_err(get_auth_error_response)
     })
     .await
 }

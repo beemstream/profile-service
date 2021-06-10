@@ -71,11 +71,11 @@ pub fn extract_refresh_token(refresh_token: Option<Cookie>) -> Result<String, Er
     match refresh_token {
         Some(r) => {
             let token = r.to_string();
-            let parsed_token = token.split("=").nth(1);
+            let parsed_token = token.split('=').nth(1);
 
             Ok(parsed_token.unwrap().to_string())
         }
-        None => return Err(Error::Error(Status::Unauthorized)),
+        None => Err(Error::Error(Status::Unauthorized)),
     }
 }
 

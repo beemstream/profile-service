@@ -72,7 +72,7 @@ pub async fn refresh_token<'a>(
         global_config.token_expiry,
         &global_config.auth_secret_key,
     )
-    .and_then(|(response, status)| Some(Response::success(Some(response), status)));
+    .map(|(response, status)| Response::success(Some(response), status));
 
     token_response.ok_or(Error::Error(Status::Unauthorized))
 }

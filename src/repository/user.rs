@@ -30,8 +30,8 @@ pub async fn is_duplicate_user_or_email(
         let found_username = get_by_username(&user.username.to_owned().unwrap(), c);
         let found_email = get_by_email(&user.email.to_owned().unwrap(), c);
 
-        let is_found_by_username = has_found_user(found_username);
-        let is_found_by_email = has_found_user(found_email);
+        let is_found_by_username = found_username.is_ok();
+        let is_found_by_email = found_email.is_ok();
 
         let mut errors: Vec<String> = vec![];
 
@@ -43,7 +43,7 @@ pub async fn is_duplicate_user_or_email(
             errors.push("email_exists".to_owned());
         }
 
-        if errors.len() > 0 {
+        if !errors.is_empty() {
             return Err(Error::error(
                 Some((errors, ErrorType::RequestInvalid)),
                 Status::Conflict,
@@ -60,7 +60,7 @@ pub async fn insert(conn: &DbConn, user: NewUser) -> Result<User, crate::util::r
         diesel::insert_into(users::table)
             .values(user)
             .get_result::<User>(c)
-            .map_err(|e| get_auth_error_response(e))
+            .map_err(get_auth_error_response)
     })
     .await
 }
@@ -94,11 +94,4 @@ pub async fn delete(conn: &DbConn, id: i32, mut user: User) -> QueryResult<User>
             .get_result(c)
     })
     .await
-}
-
-pub fn has_found_user(user: QueryResult<i32>) -> bool {
-    match user {
-        Ok(_) => true,
-        Err(_) => false,
-    }
 }

@@ -16,7 +16,11 @@ mod test;
 
 use database::DbConn;
 use jwt::jwt_validation;
-use rocket::{Build, Request, Rocket, Route, catch, catchers, http::Method::{Get, Post}, launch, routes};
+use rocket::{
+    catch, catchers,
+    http::Method::{Get, Post},
+    launch, routes, Build, Request, Rocket, Route,
+};
 use rocket_cors::{AllowedOrigins, Error};
 use util::globals::{EmailConfig, GlobalConfig, JWTConfig, TwitchConfig};
 
@@ -33,9 +37,7 @@ fn setup_up_cors(origins: &[String]) -> Result<rocket_cors::Cors, Error> {
 }
 
 #[catch(401)]
-fn not_authorized(_req: &Request) {
-    ()
-}
+fn not_authorized(_req: &Request) {}
 
 #[launch]
 fn get_rocket() -> Rocket<Build> {

@@ -34,10 +34,9 @@ pub fn twitch_exchange_code(
     let client =
         twitch_client(client_id, client_secret, callback_url).set_auth_type(AuthType::RequestBody);
 
-    let c: Result<ExchangeSuccess, RequestTokenError<HttpClientError, BasicErrorResponse>> = client
-        .exchange_code(AuthorizationCode::new(auth_code.to_string()))
-        .request(http_client);
-    c
+    client
+        .exchange_code(AuthorizationCode::new(auth_code))
+        .request(http_client)
 }
 
 pub fn twitch_refresh_access_token(
@@ -62,15 +61,13 @@ pub fn twitch_client(
     client_secret: String,
     callback_url: String,
 ) -> TwitchOauthClient {
-    let client = TwitchOauthClient::new(
+    TwitchOauthClient::new(
         ClientId::new(client_id),
         Some(ClientSecret::new(client_secret)),
         AuthUrl::new("https://id.twitch.tv/oauth2/authorize".to_string()).unwrap(),
         Some(TokenUrl::new("https://id.twitch.tv/oauth2/token".to_string()).unwrap()),
     )
-    .set_redirect_url(RedirectUrl::new(callback_url).unwrap());
-
-    client
+    .set_redirect_url(RedirectUrl::new(callback_url).unwrap())
 }
 
 pub type ExchangeSuccess = TwitchTokenResponse<TwitchFields, BasicTokenType>;

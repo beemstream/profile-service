@@ -6,7 +6,7 @@ use std::time::Duration;
 pub type RefreshToken = String;
 pub type OAuthSuccessResponse = (String, RefreshToken, Duration);
 
-pub fn get_oauth_response<'a>(
+pub fn get_oauth_response(
     code_grant: String,
     client_id: String,
     client_secret: String,

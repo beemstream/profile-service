@@ -1,4 +1,7 @@
-use lettre::{AsyncSmtpTransport, AsyncTransport, Message, Tokio02Executor, transport::smtp::authentication::{Credentials, Mechanism}};
+use lettre::{
+    transport::smtp::authentication::{Credentials, Mechanism},
+    AsyncSmtpTransport, AsyncTransport, Message, Tokio02Executor,
+};
 
 pub async fn send_email(to: String, email_username: String, email_password: String) {
     let email = Message::builder()

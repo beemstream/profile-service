@@ -1,5 +1,5 @@
 use futures::TryFutureExt;
-use rocket::{State, http::Status, post, serde::json::Json};
+use rocket::{http::Status, post, serde::json::Json, State};
 
 use crate::{
     database::DbConn,
@@ -30,11 +30,12 @@ pub async fn register_user(
         .map(|user| {
             if email_config.email_enabled {
                 rocket::tokio::spawn(send_email(
-                    user.email.clone(),
+                    user.email,
                     email_config.email_username.clone(),
                     email_config.email_password.clone(),
                 ));
             }
+
+            Status::Created
         })
-        .and_then(|_| Ok(Status::Created))
 }

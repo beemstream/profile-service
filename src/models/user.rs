@@ -76,10 +76,7 @@ impl NewUser {
         Self {
             username: new_user_request.username.to_owned().unwrap(),
             email: new_user_request.email.to_owned().unwrap(),
-            password: NewUser::hash_password(
-                new_user_request.password.to_owned().unwrap(),
-                secret_key,
-            ),
+            password: NewUser::hash_password(new_user_request.password.unwrap(), secret_key),
         }
     }
 }

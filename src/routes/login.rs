@@ -1,4 +1,9 @@
-use rocket::{State, http::{CookieJar, Status}, post, serde::json::Json};
+use rocket::{
+    http::{CookieJar, Status},
+    post,
+    serde::json::Json,
+    State,
+};
 
 use crate::{
     database::DbConn,
@@ -16,10 +21,10 @@ use super::users_util::{
 };
 
 #[post("/login", format = "application/json", data = "<user>")]
-pub async fn login<'a>(
+pub async fn login(
     conn: DbConn,
     user: Json<LoginUser>,
-    cookies: &CookieJar<'a>,
+    cookies: &CookieJar<'_>,
     global_config: &State<GlobalConfig>,
 ) -> Result<Response<TokenResponse>, Error> {
     let user: LoginUser = user.into_inner();
@@ -58,7 +63,7 @@ pub async fn login<'a>(
     );
 
     response
-        .and_then(|(j, s)| Some(Ok(Response::success(Some(j), s))))
-        .or_else(|| Some(Err(Error::Error(Status::Unauthorized))))
+        .map(|(j, s)| Ok(Response::success(Some(j), s)))
+        .or(Some(Err(Error::Error(Status::Unauthorized))))
         .unwrap()
 }

@@ -1,6 +1,9 @@
-use rocket::{http::{ContentType, Status}, serde::json::Json};
 use rocket::request::Request;
 use rocket::response::Responder;
+use rocket::{
+    http::{ContentType, Status},
+    serde::json::Json,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize)]
