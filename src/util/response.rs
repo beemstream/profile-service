@@ -9,8 +9,8 @@ pub struct AuthResponse {
     error_codes: Option<Vec<String>>,
 }
 
-#[serde(rename_all = "snake_case")]
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum ErrorType {
     RequestInvalid,
 }
