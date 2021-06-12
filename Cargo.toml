@@ -22,9 +22,7 @@ async-trait = "0.1.31"
 futures = { version = "0.3.7", features = ["thread-pool"] }
 postgres = { version = "0.15", features = ["with-chrono"]  }
 rust-argon2 = "0.8"
-lettre = { version = "0.10.0-alpha.4", features = ["tokio02",  "smtp-transport", "tokio02-native-tls"] }
-openssl = "*"
-openssl-probe = "0.1.2"
+lettre = { version = "0.10.0-rc.3", features = ["smtp-transport", "async-std1", "tokio1", "tokio1-native-tls"] }
 
 [dev-dependencies]
 lazy_static = "1.4.0"
