@@ -12,4 +12,4 @@ docker pull beemstream/profile-service:$version
 docker tag beemstream/profile-service:$version beemstream/profile-service:latest
 docker push beemstream/profile-service:latest
 
-ssh root@157.245.43.172 "docker service update --image beemstream/profile-service beemstream_profile_service"
+ssh root@157.245.43.172 "docker service update --image beemstream/profile-service beemstream_profile_service && docker container prune -f && docker image prune -a -f"

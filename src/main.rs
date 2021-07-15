@@ -18,23 +18,9 @@ use database::DbConn;
 use jwt::jwt_validation;
 use rocket::{
     catch, catchers,
-    http::Method::{Get, Post},
     launch, routes, Build, Request, Rocket, Route,
 };
-use rocket_cors::{AllowedOrigins, Error};
 use util::globals::{EmailConfig, GlobalConfig, JWTConfig, TwitchConfig};
-
-fn setup_up_cors(origins: &[String]) -> Result<rocket_cors::Cors, Error> {
-    let allowed_origins = AllowedOrigins::some_exact(origins);
-
-    rocket_cors::CorsOptions {
-        allowed_origins,
-        allowed_methods: vec![Get, Post].into_iter().map(From::from).collect(),
-        allow_credentials: true,
-        ..Default::default()
-    }
-    .to_cors()
-}
 
 #[catch(401)]
 fn not_authorized(_req: &Request) {}
@@ -49,7 +35,8 @@ fn get_rocket() -> Rocket<Build> {
         routes::users::authenticate,
         routes::oauth::twitch_auth,
         routes::oauth::twitch_token,
-        routes::profile_lookup::profile_lookup
+        routes::oauth::logout_twitch,
+        routes::profile_lookup::profile_lookup,
     ];
 
     let figment = rocket.figment();
@@ -64,7 +51,6 @@ fn get_rocket() -> Rocket<Build> {
     rocket
         .mount("/auth", routes)
         .attach(DbConn::fairing())
-        .attach(setup_up_cors(&global_config.allowed_origins).unwrap())
         .manage(global_config)
         .manage(twitch_config)
         .manage(email_config)

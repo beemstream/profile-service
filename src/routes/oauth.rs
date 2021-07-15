@@ -123,3 +123,14 @@ pub fn twitch_token<'a>(
         _ => Err(Error::Error(Status::Unauthorized)),
     }
 }
+
+#[get("/oauth/twitch/logout")]
+pub fn logout_twitch<'a>(
+    cookies: &CookieJar<'a>,
+) -> Status {
+    if cookies.get_private("refresh_token").is_some() {
+        cookies.remove_private(Cookie::named("refresh_token"));
+    }
+
+    Status::Ok
+}
